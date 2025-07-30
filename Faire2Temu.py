@@ -32,16 +32,23 @@ def copy_mapped_data():
         
         # Note: Contribution Goods will be handled separately with SKU transformation
         
+        # Option mappings
+        'Option 1 Name': 'Variation Theme',
+        'Option 1 Value': 'Color',
+        
+        # Price mappings
+        'USD Unit Retail Price': 'List Price - USD',  # Additional price mapping
+        
+        # Dimension mappings
+        'Item Weight': 'Weight - lb',
+        'Item Length': 'Length - in',
+        'Item Width': 'Width - in',
+        'Item Height': 'Height - in',
+        
         # Optional mappings - uncomment and modify as needed
         # 'Product Status': 'Status',
         # 'Product Type': 'Category',
-        # 'Item Weight': 'Weight - lb',
-        # 'Item Length': 'Length - in',
-        # 'Item Width': 'Width - in',
-        # 'Item Height': 'Height - in',
         # 'Product Images': 'Detail Images URL',
-        # 'Option 1 Name': 'Color',  # or other appropriate Temu column
-        # 'Option 1 Value': 'Color Value',
         # 'Option 2 Name': 'Size',
         # 'Option 2 Value': 'Size Value',
     }
@@ -55,13 +62,16 @@ def copy_mapped_data():
     
     FIXED_COLUMN_VALUES = {
         'Category': '29153',
-        'Country/Region of Origin': 'China',
+        'Country/Region of Origin': 'Mainland China',
         'Province of Origin': 'Guangdong',
+        'Update or Add': 'Add',
+        'Shipping Template': 'NIMA2',
+        'Size': 'One Size',
+        'California Proposition 65 Warning Type': 'No Warning Applicable',
         
         # Add more fixed values as needed:
         # 'Status': 'Active',
         # 'Brand': 'Your Brand Name',
-        # 'Shipping Template': 'Standard',
         # 'Handling Time': '1',
         # 'Import Designation': 'General',
         # 'Fulfillment Channel': 'FBA',
@@ -108,6 +118,18 @@ def copy_mapped_data():
         else:
             # If no letter suffix found, return the original SKU
             return sku_str
+    
+    def split_image_urls(image_urls_str):
+        """
+        Split image URLs that are separated by whitespace or newlines.
+        Returns a list of individual URLs.
+        """
+        if pd.isna(image_urls_str) or str(image_urls_str).strip() == '':
+            return []
+        
+        # Split by whitespace and newlines, then filter out empty strings
+        urls = re.split(r'[\s\n]+', str(image_urls_str).strip())
+        return [url.strip() for url in urls if url.strip()]
     
     # Define transformation functions for specific columns
     TRANSFORMATIONS = {
@@ -228,6 +250,63 @@ def copy_mapped_data():
                 print("  Warning: Could not find 'Contribution Goods' column in template")
         else:
             print("  Warning: 'SKU' column not found in Faire file")
+        
+        # Step 6b: Special handling for Image URLs
+        print("Processing Image URLs...")
+        if 'Option Image' in faire_df.columns or 'Product Images' in faire_df.columns:
+            # Get data from row 4 onwards
+            faire_data = faire_df.iloc[3:]
+            
+            # Find SKU Images URL columns in template
+            sku_images_columns = []
+            detail_images_columns = []
+            
+            for col_idx, cell in enumerate(template_sheet[2], 1):  # Row 2 contains headers
+                cell_value = str(cell.value)
+                if 'SKU Images URL' in cell_value:
+                    sku_images_columns.append(col_idx)
+                elif 'Detail Images URL' in cell_value:
+                    detail_images_columns.append(col_idx)
+            
+            print(f"  Found {len(sku_images_columns)} SKU Images URL columns")
+            print(f"  Found {len(detail_images_columns)} Detail Images URL columns")
+            
+            # Process each row
+            option_image_count = 0
+            product_images_count = 0
+            no_image_count = 0
+            
+            for row_idx, (_, row_data) in enumerate(faire_data.iterrows(), 3):
+                # Determine which image source to use
+                image_urls = []
+                
+                # First try Option Image
+                if 'Option Image' in faire_df.columns and pd.notna(row_data['Option Image']):
+                    image_urls = [str(row_data['Option Image']).strip()]
+                    option_image_count += 1
+                # Fallback to Product Images
+                elif 'Product Images' in faire_df.columns and pd.notna(row_data['Product Images']):
+                    image_urls = split_image_urls(row_data['Product Images'])
+                    product_images_count += 1
+                else:
+                    no_image_count += 1
+                
+                # Assign URLs to SKU Images URL columns
+                if image_urls and sku_images_columns:
+                    for i, url in enumerate(image_urls):
+                        if i < len(sku_images_columns):
+                            template_sheet.cell(row=row_idx, column=sku_images_columns[i], value=url)
+                    
+                    # Also assign first URL to first Detail Images URL column
+                    if detail_images_columns and image_urls:
+                        template_sheet.cell(row=row_idx, column=detail_images_columns[0], value=image_urls[0])
+            
+            print(f"  Processed image URLs for {len(faire_data)} rows")
+            print(f"    - Used Option Image: {option_image_count} rows")
+            print(f"    - Used Product Images: {product_images_count} rows")
+            print(f"    - No image data: {no_image_count} rows")
+        else:
+            print("  Warning: No image columns found in Faire file")
         
         # Step 7: Process fixed column values
         print("Processing fixed column values...")

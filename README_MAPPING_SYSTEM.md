@@ -7,6 +7,7 @@ This enhanced system allows you to map multiple columns from Faire products to T
 - **Column Mapping**: Map multiple columns from Faire to Temu
 - **Fixed Values**: Set default values for specific Temu columns
 - **Data Transformations**: Custom data processing for specific columns
+- **Image URL Processing**: Intelligent handling of Option Image and Product Images
 - **Validation**: Automatic checking for missing columns
 - **Detailed Logging**: See exactly what was processed
 
@@ -28,15 +29,24 @@ COLUMN_MAPPINGS = {
     # Basic product information
     'Product Name (English)': 'Product Name',
     'Description (English)': 'Product Description',
-    'Product Token': 'Contribution Goods',
     'SKU': 'Contribution SKU',
     'USD Unit Retail Price': 'Base Price - USD',
+    'USD Unit Retail Price': 'List Price - USD',
     'On Hand Inventory': 'Quantity',
     'Made In Country': 'Country/Region of Origin',
     
+    # Option mappings
+    'Option 1 Name': 'Variation Theme',
+    'Option 1 Value': 'Color',
+    
+    # Dimension mappings
+    'Item Weight': 'Weight - lb',
+    'Item Length': 'Length - in',
+    'Item Width': 'Width - in',
+    'Item Height': 'Height - in',
+    
     # Add more mappings here:
     'Product Status': 'Status',
-    'Item Weight': 'Weight - lb',
     'Product Images': 'Detail Images URL',
 }
 ```
@@ -50,12 +60,16 @@ FIXED_COLUMN_VALUES = {
     'Category': '29153',
     'Country/Region of Origin': 'China',
     'Province of Origin': 'Guangdong',
+    'Update or Add': 'Add',
+    'Shipping Template': 'NIMA2',
+    'Size': 'One Size',
     
     # Add more fixed values:
     'Status': 'Active',
     'Brand': 'Your Brand Name',
-    'Shipping Template': 'Standard',
     'Handling Time': '1',
+    'Import Designation': 'General',
+    'Fulfillment Channel': 'FBA',
 }
 ```
 
@@ -105,25 +119,36 @@ python test_fixed_values.py
 
 ## 📊 Current Configuration
 
-### Mapped Columns (6 + 1 transformed)
+### Mapped Columns (12 + 1 transformed)
 - ✅ Product Name (English) → Product Name
 - ✅ Description (English) → Product Description  
 - ✅ SKU → Contribution SKU
 - ✅ USD Unit Retail Price → Base Price - USD
+- ✅ USD Unit Retail Price → List Price - USD
 - ✅ On Hand Inventory → Quantity
 - ✅ Made In Country → Country/Region of Origin
+- ✅ Option 1 Name → Variation Theme
+- ✅ Option 1 Value → Color
+- ✅ Item Weight → Weight - lb
+- ✅ Item Length → Length - in
+- ✅ Item Width → Width - in
+- ✅ Item Height → Height - in
 - ✅ SKU → Contribution Goods (with transformation: removes letter suffix)
 
-### Fixed Values (3)
+### Fixed Values (6)
 - ✅ Category = '29153'
 - ✅ Country/Region of Origin = 'China'
 - ✅ Province of Origin = 'Guangdong'
+- ✅ Update or Add = 'Add'
+- ✅ Shipping Template = 'NIMA2'
+- ✅ Size = 'One Size'
 
 ## 📈 Results
 
 - **5,669 products** processed successfully
-- **6 column mappings** applied + **1 SKU transformation**
-- **3 fixed values** set for all rows
+- **12 column mappings** applied + **1 SKU transformation**
+- **Image URL processing** for 5,669 rows
+- **6 fixed values** set for all rows
 - **Output file**: `output/temu_upload_generated_with_fixed_values.xlsx`
 
 ## 🔧 Adding More Mappings
@@ -191,4 +216,9 @@ FIXED_COLUMN_VALUES = {
 - Fixed values override mapped values for the same column
 - All data is copied from row 4 onwards (skipping rows 1-3)
 - Template structure and formatting are preserved
-- Output file includes both mapped and fixed values 
+- Output file includes both mapped and fixed values
+- **Image Processing Logic**:
+  - Priority: Option Image → Product Images (fallback)
+  - Product Images are split by whitespace/newlines
+  - First URL assigned to SKU Images URL and Detail Images URL
+  - Multiple URLs distributed across SKU Images URL columns 
