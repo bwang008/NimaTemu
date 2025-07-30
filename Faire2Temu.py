@@ -136,7 +136,8 @@ def copy_mapped_data():
         'USD Unit Retail Price': transform_price,
         'Product Name (English)': transform_product_name,
         'Description (English)': transform_product_name,
-        'SKU': transform_sku_to_goods,  # Add transformation for SKU → Contribution Goods
+        # Note: SKU transformation is handled separately for Contribution Goods only
+        # 'SKU': transform_sku_to_goods,  # REMOVED - this was causing the bug
     }
     
     # ============================================================================
@@ -188,6 +189,21 @@ def copy_mapped_data():
         # Step 6: Process each mapping
         print("Processing column mappings...")
         
+        # Find all columns named 'Quantity' in the template
+        quantity_col_indices = []
+        for col_idx, cell in enumerate(template_sheet[2], 1):
+            if str(cell.value) == 'Quantity':
+                quantity_col_indices.append(col_idx)
+        
+        # Find all columns named 'Base Price - USD' and 'List Price - USD'
+        base_price_col_indices = []
+        list_price_col_indices = []
+        for col_idx, cell in enumerate(template_sheet[2], 1):
+            if str(cell.value) == 'Base Price - USD':
+                base_price_col_indices.append(col_idx)
+            if str(cell.value) == 'List Price - USD':
+                list_price_col_indices.append(col_idx)
+        
         for faire_col, temu_col in COLUMN_MAPPINGS.items():
             if faire_col in faire_df.columns and temu_col in temu_df.columns:
                 print(f"  Mapping: {faire_col} -> {temu_col}")
@@ -211,13 +227,41 @@ def copy_mapped_data():
                     source_data = [TRANSFORMATIONS[faire_col](value) for value in source_data]
                     print(f"    Applied transformation: {faire_col}")
                 
-                # Write data to template
+                # Special handling for Quantity: populate all Quantity columns
+                if temu_col == 'Quantity' and quantity_col_indices:
+                    for row_idx, value in enumerate(source_data, 3):
+                        for q_col_idx in quantity_col_indices:
+                            template_sheet.cell(row=row_idx, column=q_col_idx, value=value)
+                    print(f"    Copied {len(source_data)} values to all Quantity columns ({len(quantity_col_indices)})")
+                    continue  # Skip the default single-column write below
+                
+                # Write data to template (default: single column)
                 for row_idx, value in enumerate(source_data, 3):
                     template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
                 
                 print(f"    Copied {len(source_data)} values")
             else:
                 print(f"  Skipping: {faire_col} -> {temu_col} (column not found)")
+        
+        # After all mappings, calculate Base Price - USD as 90% of List Price - USD, rounded down
+        if base_price_col_indices and list_price_col_indices:
+            print("Calculating Base Price - USD as 90% of List Price - USD (rounded down)...")
+            num_data_rows = len(faire_df.iloc[3:])
+            for row_idx in range(3, 3 + num_data_rows):
+                # Use the first List Price - USD column for calculation
+                list_price_cell = template_sheet.cell(row=row_idx, column=list_price_col_indices[0])
+                try:
+                    list_price_val = list_price_cell.value
+                    if list_price_val is None or str(list_price_val).strip() == '':
+                        base_price = ''
+                    else:
+                        list_price = float(str(list_price_val))
+                        base_price = int(list_price * 0.9)
+                except (TypeError, ValueError):
+                    base_price = ''
+                for bp_col_idx in base_price_col_indices:
+                    template_sheet.cell(row=row_idx, column=bp_col_idx, value=base_price)
+            print(f"  Set Base Price - USD for {num_data_rows} rows")
         
         # Step 6a: Special handling for Contribution Goods (transformed from SKU)
         print("Processing Contribution Goods transformation...")

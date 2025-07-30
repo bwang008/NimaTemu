@@ -14,9 +14,8 @@ This enhanced system allows you to map multiple columns from Faire products to T
 ## 📁 Files
 
 - `Faire2Temu.py` - Main script with enhanced mapping system
-- `show_columns.py` - Helper to view all available columns
-- `test_fixed_values.py` - Test script to verify fixed values
-- `mapping_example.py` - Examples of additional mappings
+- `test_suite.py` - Comprehensive test suite for all functionality
+- `README_MAPPING_SYSTEM.md` - This documentation file
 
 ## ⚙️ Configuration
 
@@ -109,12 +108,21 @@ python Faire2Temu.py
 
 ### View Available Columns
 ```bash
-python show_columns.py
+python test_suite.py --test columns
 ```
 
-### Test Fixed Values
+### Run All Tests
 ```bash
-python test_fixed_values.py
+python test_suite.py --test all
+```
+
+### Run Specific Tests
+```bash
+python test_suite.py --test baseline     # Test basic functionality
+python test_suite.py --test fixed        # Test fixed values
+python test_suite.py --test sku          # Test SKU transformation
+python test_suite.py --test mappings     # Test new mappings
+python test_suite.py --test images       # Test image processing
 ```
 
 ## 📊 Current Configuration
