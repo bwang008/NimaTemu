@@ -26,7 +26,8 @@ def copy_mapped_data():
         'Product Name (English)': 'Product Name',
         'Description (English)': 'Product Description',
         'SKU': 'Contribution SKU',
-        'USD Unit Retail Price': 'Base Price - USD',
+        # Note: USD Unit Retail Price is now used for pricing strategy calculation
+        # 'USD Unit Retail Price': 'Base Price - USD',  # REMOVED - handled by pricing strategy
         'On Hand Inventory': 'Quantity',
         'Made In Country': 'Country/Region of Origin',
         
@@ -37,7 +38,8 @@ def copy_mapped_data():
         'Option 1 Value': 'Color',
         
         # Price mappings
-        'USD Unit Retail Price': 'List Price - USD',  # Additional price mapping
+        # Note: USD Unit Retail Price is now used for pricing strategy calculation
+        # 'USD Unit Retail Price': 'List Price - USD',  # REMOVED - handled by pricing strategy
         
         # Dimension mappings
         'Item Weight': 'Weight - lb',
@@ -243,25 +245,57 @@ def copy_mapped_data():
             else:
                 print(f"  Skipping: {faire_col} -> {temu_col} (column not found)")
         
-        # After all mappings, calculate Base Price - USD as 90% of List Price - USD, rounded down
+        # After all mappings, calculate pricing strategy
         if base_price_col_indices and list_price_col_indices:
-            print("Calculating Base Price - USD as 90% of List Price - USD (rounded down)...")
+            print("Calculating pricing strategy (1x and 1.25x Faire price, floored to X.99)...")
             num_data_rows = len(faire_df.iloc[3:])
+            
+            # Get the original Faire price data
+            faire_price_col = 'USD Unit Retail Price'
+            faire_prices = faire_df.iloc[3:][faire_price_col].dropna().tolist()
+            
             for row_idx in range(3, 3 + num_data_rows):
-                # Use the first List Price - USD column for calculation
-                list_price_cell = template_sheet.cell(row=row_idx, column=list_price_col_indices[0])
                 try:
-                    list_price_val = list_price_cell.value
-                    if list_price_val is None or str(list_price_val).strip() == '':
-                        base_price = ''
+                    # Get the original Faire price for this row
+                    faire_price = faire_prices[row_idx - 3] if row_idx - 3 < len(faire_prices) else None
+                    
+                    if faire_price is not None and str(faire_price).strip() != '':
+                        faire_price_float = float(str(faire_price))
+                        
+                        # Calculate Base Price: 1x Faire price, floored, minus 1 cent
+                        base_price_raw = faire_price_float * 1
+                        base_price_floored = int(base_price_raw)
+                        base_price_final = base_price_floored - 0.01
+                        
+                        # Calculate List Price: 1.25x Faire price, floored, minus 1 cent
+                        list_price_raw = faire_price_float * 1.25
+                        list_price_floored = int(list_price_raw)
+                        list_price_final = list_price_floored - 0.01
+                        
+                        # Set Base Price - USD
+                        for bp_col_idx in base_price_col_indices:
+                            template_sheet.cell(row=row_idx, column=bp_col_idx, value=base_price_final)
+                        
+                        # Set List Price - USD
+                        for lp_col_idx in list_price_col_indices:
+                            template_sheet.cell(row=row_idx, column=lp_col_idx, value=list_price_final)
                     else:
-                        list_price = float(str(list_price_val))
-                        base_price = int(list_price * 0.9)
-                except (TypeError, ValueError):
-                    base_price = ''
-                for bp_col_idx in base_price_col_indices:
-                    template_sheet.cell(row=row_idx, column=bp_col_idx, value=base_price)
-            print(f"  Set Base Price - USD for {num_data_rows} rows")
+                        # Set empty values if no Faire price
+                        for bp_col_idx in base_price_col_indices:
+                            template_sheet.cell(row=row_idx, column=bp_col_idx, value='')
+                        for lp_col_idx in list_price_col_indices:
+                            template_sheet.cell(row=row_idx, column=lp_col_idx, value='')
+                            
+                except (TypeError, ValueError) as e:
+                    # Set empty values on error
+                    for bp_col_idx in base_price_col_indices:
+                        template_sheet.cell(row=row_idx, column=bp_col_idx, value='')
+                    for lp_col_idx in list_price_col_indices:
+                        template_sheet.cell(row=row_idx, column=lp_col_idx, value='')
+            
+            print(f"  Set pricing strategy for {num_data_rows} rows")
+            print(f"  Base Price: 1x Faire price, floored, minus 1 cent")
+            print(f"  List Price: 1.25x Faire price, floored, minus 1 cent")
         
         # Step 6a: Special handling for Contribution Goods (transformed from SKU)
         print("Processing Contribution Goods transformation...")
