@@ -68,7 +68,8 @@ def copy_mapped_data():
         'Province of Origin': 'Guangdong',
         'Update or Add': 'Add',
         'Shipping Template': 'NIMA2',
-        'Size': 'One Size',
+        # Note: Size is now handled by conditional logic
+        # 'Size': 'One Size',  # REMOVED - handled by conditional logic
         'California Proposition 65 Warning Type': 'No Warning Applicable',
         
         # Add more fixed values as needed:
@@ -206,12 +207,21 @@ def copy_mapped_data():
             if str(cell.value) == 'List Price - USD':
                 list_price_col_indices.append(col_idx)
         
+        # Find Variation Theme and Size columns for conditional logic
+        variation_theme_col_idx = None
+        size_col_idx = None
+        for col_idx, cell in enumerate(template_sheet[2], 1):
+            if str(cell.value) == 'Variation Theme':
+                variation_theme_col_idx = col_idx
+            if str(cell.value) == 'Size':
+                size_col_idx = col_idx
+        
         for faire_col, temu_col in COLUMN_MAPPINGS.items():
             if faire_col in faire_df.columns and temu_col in temu_df.columns:
                 print(f"  Mapping: {faire_col} -> {temu_col}")
                 
                 # Get source data (row 4 onwards, skip rows 1-3)
-                source_data = faire_df.iloc[3:][faire_col].dropna().tolist()
+                source_data = faire_df.iloc[3:][faire_col].tolist()
                 
                 # Find the column index in Temu template
                 temu_col_idx = None
@@ -231,19 +241,50 @@ def copy_mapped_data():
                 
                 # Special handling for Quantity: populate all Quantity columns
                 if temu_col == 'Quantity' and quantity_col_indices:
-                    for row_idx, value in enumerate(source_data, 3):
+                    for row_idx, value in enumerate(source_data, 5):
+                        # Handle NaN values
+                        cell_value = '' if pd.isna(value) else value
                         for q_col_idx in quantity_col_indices:
-                            template_sheet.cell(row=row_idx, column=q_col_idx, value=value)
+                            template_sheet.cell(row=row_idx, column=q_col_idx, value=cell_value)
                     print(f"    Copied {len(source_data)} values to all Quantity columns ({len(quantity_col_indices)})")
                     continue  # Skip the default single-column write below
                 
                 # Write data to template (default: single column)
-                for row_idx, value in enumerate(source_data, 3):
-                    template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
+                for row_idx, value in enumerate(source_data, 5):
+                    # Handle NaN values
+                    if pd.isna(value):
+                        template_sheet.cell(row=row_idx, column=temu_col_idx, value='')
+                    else:
+                        template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
                 
                 print(f"    Copied {len(source_data)} values")
             else:
                 print(f"  Skipping: {faire_col} -> {temu_col} (column not found)")
+        
+        # Step 6c: Conditional logic for Variation Theme and Size
+        print("Processing conditional Variation Theme logic...")
+        if variation_theme_col_idx is not None and size_col_idx is not None:
+            # Get the Color data that was mapped
+            color_data = []
+            if 'Option 1 Value' in faire_df.columns:
+                color_data = faire_df.iloc[3:]['Option 1 Value'].tolist()
+            
+            # Process each row for conditional logic
+            for row_idx, color_value in enumerate(color_data, 5):
+                if pd.isna(color_value) or str(color_value).strip() == '':
+                    # No color value - set Variation Theme to 'Size' and Size to 'One Size'
+                    template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Size')
+                    template_sheet.cell(row=row_idx, column=size_col_idx, value='One Size')
+                else:
+                    # Has color value - Variation Theme stays as 'Color' (already set by mapping)
+                    # Size column remains empty or as set by fixed values
+                    pass
+            
+            print(f"  Applied conditional logic to {len(color_data)} rows")
+            print(f"  - Rows with color: Set Variation Theme = 'Color'")
+            print(f"  - Rows without color: Set Variation Theme = 'Size', Size = 'One Size'")
+        else:
+            print("  Warning: Could not find Variation Theme or Size columns for conditional logic")
         
         # After all mappings, calculate pricing strategy
         if base_price_col_indices and list_price_col_indices:
@@ -252,12 +293,12 @@ def copy_mapped_data():
             
             # Get the original Faire price data
             faire_price_col = 'USD Unit Retail Price'
-            faire_prices = faire_df.iloc[3:][faire_price_col].dropna().tolist()
+            faire_prices = faire_df.iloc[3:][faire_price_col].tolist()
             
-            for row_idx in range(3, 3 + num_data_rows):
+            for row_idx in range(5, 5 + num_data_rows):
                 try:
                     # Get the original Faire price for this row
-                    faire_price = faire_prices[row_idx - 3] if row_idx - 3 < len(faire_prices) else None
+                    faire_price = faire_prices[row_idx - 5] if row_idx - 5 < len(faire_prices) else None
                     
                     if faire_price is not None and str(faire_price).strip() != '':
                         faire_price_float = float(str(faire_price))
@@ -301,7 +342,7 @@ def copy_mapped_data():
         print("Processing Contribution Goods transformation...")
         if 'SKU' in faire_df.columns:
             # Get SKU data
-            sku_data = faire_df.iloc[3:]['SKU'].dropna().tolist()
+            sku_data = faire_df.iloc[3:]['SKU'].tolist()
             
             # Transform SKU to Contribution Goods
             contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
@@ -315,8 +356,10 @@ def copy_mapped_data():
             
             if goods_col_idx is not None:
                 # Write transformed data to Contribution Goods column
-                for row_idx, value in enumerate(contribution_goods_data, 3):
-                    template_sheet.cell(row=row_idx, column=goods_col_idx, value=value)
+                for row_idx, value in enumerate(contribution_goods_data, 5):
+                    # Handle NaN values
+                    cell_value = '' if pd.isna(value) else value
+                    template_sheet.cell(row=row_idx, column=goods_col_idx, value=cell_value)
                 
                 print(f"  Transformed {len(contribution_goods_data)} SKUs to Contribution Goods")
                 
@@ -354,7 +397,7 @@ def copy_mapped_data():
             product_images_count = 0
             no_image_count = 0
             
-            for row_idx, (_, row_data) in enumerate(faire_data.iterrows(), 3):
+            for row_idx, (_, row_data) in enumerate(faire_data.iterrows(), 5):
                 # Determine which image source to use
                 image_urls = []
                 
@@ -407,7 +450,7 @@ def copy_mapped_data():
             num_data_rows = len(faire_df.iloc[3:])
             
             # Write fixed value to all data rows
-            for row_idx in range(3, 3 + num_data_rows):
+            for row_idx in range(5, 5 + num_data_rows):
                 template_sheet.cell(row=row_idx, column=temu_col_idx, value=fixed_value)
             
             print(f"    Set fixed value for {num_data_rows} rows")
