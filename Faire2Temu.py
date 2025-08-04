@@ -93,6 +93,42 @@ def copy_mapped_data():
     }
     
     # ============================================================================
+    # CONDITIONAL CATEGORY ASSIGNMENT
+    # ============================================================================
+    # Configure conditional category assignments based on product name content.
+    # This allows you to assign different category codes based on keywords in product names.
+    # The system will check each condition in order and use the first match.
+    
+    CONDITIONAL_CATEGORIES = [
+        {
+            'condition': lambda product_name: 'tote' in str(product_name).lower(),
+            'category_code': '29163',
+            'description': 'Tote bags and totes'
+        },
+        {
+            'condition': lambda product_name: 'backpack' in str(product_name).lower(),
+            'category_code': '29164',
+            'description': 'Backpacks'
+        },
+        {
+            'condition': lambda product_name: 'wallet' in str(product_name).lower(),
+            'category_code': '29165',
+            'description': 'Wallets'
+        },
+        # Add more conditions as needed:
+        # {
+        #     'condition': lambda product_name: 'crossbody' in str(product_name).lower(),
+        #     'category_code': '29166',
+        #     'description': 'Crossbody bags'
+        # },
+        # {
+        #     'condition': lambda product_name: 'clutch' in str(product_name).lower(),
+        #     'category_code': '29167',
+        #     'description': 'Clutch bags'
+        # },
+    ]
+    
+    # ============================================================================
     # DATA TRANSFORMATION FUNCTIONS (optional)
     # ============================================================================
     # Add custom transformation functions for specific columns if needed
@@ -177,6 +213,16 @@ def copy_mapped_data():
             'description': description
         }
         print(f"Added category: {category_name} with prefixes {prefixes}")
+    
+    def determine_category_code(product_name, default_category='29153'):
+        """
+        Determine the category code based on product name content.
+        Returns the category code for the first matching condition, or default if no match.
+        """
+        for condition_config in CONDITIONAL_CATEGORIES:
+            if condition_config['condition'](product_name):
+                return condition_config['category_code']
+        return default_category
     
     # ============================================================================
     # PROCESSING FUNCTION FOR EACH CATEGORY
@@ -466,8 +512,8 @@ def copy_mapped_data():
         else:
             print("  Warning: No image columns found in Faire file")
         
-        # Process fixed column values
-        print("Processing fixed column values...")
+        # Process fixed column values with conditional category assignment
+        print("Processing fixed column values with conditional category assignment...")
         
         for temu_col, fixed_value in FIXED_COLUMN_VALUES.items():
             print(f"  Setting fixed value: {temu_col} = '{fixed_value}'")
@@ -486,11 +532,38 @@ def copy_mapped_data():
             # Get the number of data rows
             num_data_rows = len(category_df)
             
-            # Write fixed value to all data rows
-            for row_idx in range(5, 5 + num_data_rows):
-                template_sheet.cell(row=row_idx, column=temu_col_idx, value=fixed_value)
+            # Special handling for Category column with conditional assignment
+            if temu_col == 'Category':
+                print("    Applying conditional category assignment...")
+                category_assignments = {}
+                
+                # Get product names for conditional category assignment
+                product_names = []
+                if 'Product Name (English)' in category_df.columns:
+                    product_names = category_df['Product Name (English)'].tolist()
+                
+                # Process each row with conditional category assignment
+                for row_idx in range(5, 5 + num_data_rows):
+                    product_name = product_names[row_idx - 5] if row_idx - 5 < len(product_names) else ''
+                    category_code = determine_category_code(product_name, fixed_value)
+                    
+                    # Track category assignments for reporting
+                    if category_code not in category_assignments:
+                        category_assignments[category_code] = 0
+                    category_assignments[category_code] += 1
+                    
+                    template_sheet.cell(row=row_idx, column=temu_col_idx, value=category_code)
+                
+                # Report category assignments
+                print(f"    Category assignments:")
+                for category_code, count in category_assignments.items():
+                    print(f"      {category_code}: {count} products")
+            else:
+                # Write fixed value to all data rows for non-category columns
+                for row_idx in range(5, 5 + num_data_rows):
+                    template_sheet.cell(row=row_idx, column=temu_col_idx, value=fixed_value)
             
-            print(f"    Set fixed value for {num_data_rows} rows")
+            print(f"    Set values for {num_data_rows} rows")
         
         # Save the workbook
         workbook.save(output_file)
@@ -536,6 +609,7 @@ def copy_mapped_data():
         print(f"Mapping {len(COLUMN_MAPPINGS)} columns")
         print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
         print(f"Categories: {list(CATEGORY_CONFIGS.keys())}")
+        print(f"Conditional category rules: {len(CONDITIONAL_CATEGORIES)}")
         
         # Step 1: Load Faire products file
         print("Loading Faire products file...")
