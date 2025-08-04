@@ -1,0 +1,799 @@
+=== BAG/HANDBAG PREFIXES ANALYSIS ===
+
+Total unique SKU prefixes: 914
+Bag-related prefixes: 198
+Other prefixes: 716
+
+=== BAG/HANDBAG PREFIXES ===
+HBG104: 1385 products
+  Examples: ['HBG104955BL', 'HBG104955G', 'HBG104955OR']
+  Sample names: ['\nLadies Clear see Thru Crossbody Fashion Handbag ', '\nLadies Clear see Thru Crossbody Fashion Handbag ']
+
+HBG103: 550 products
+  Examples: ['HBG103999BEI', 'HBG103999BL', 'HBG103999W']
+  Sample names: ['2 pc Ladies Checkered Tote Handbag', '2 pc Ladies Checkered Tote Handbag']
+
+HBG105: 481 products
+  Examples: ['HBG105031G', 'HBG105031S', 'HBG105059AB']
+  Sample names: ['Ladies  Rhinestone Clutch Evening Handbag', 'Ladies  Rhinestone Clutch Evening Handbag']
+
+CAP006: 144 products
+  Examples: ['CAP00691', 'CAP00638', 'CAP00697']
+  Sample names: ['Aztec Print Hat Belt Decor on Natural Fedora Hat', 'Aztec Print Ladies Sailor Bucket Hat']
+
+TO-407: 63 products
+  Examples: ['TO-40745G', 'TO-40745S', 'TO-40771G']
+  Sample names: ['Ladies Aztec Themed Chain Links Metal Chain Belt', 'Ladies Aztec Themed Chain Links Metal Chain Belt']
+
+CAP005: 60 products
+  Examples: ['CAP00535B', 'CAP00556B', 'CAP00556BZ']
+  Sample names: ['Ladies Baseball Cap Rhinestone Butterfly Theme Hat', 'Ladies Fashion Fedora Faux Leather Hat']
+
+TO-406: 53 products
+  Examples: ['TO-40648BR', 'TO-40648KH', 'TO-40648OL']
+  Sample names: ['Guitar Style Criss Cross Handbag Strap', 'Guitar Style Criss Cross Handbag Strap']
+
+TO-405: 49 products
+  Examples: ['TO-40568', 'TO-40578', 'TO-40567']
+  Sample names: ['Aztec Print Guitar Style Handbag Strap', 'Blue & Black Guitar Style Handbag Strap']
+
+HM0059: 31 products
+  Examples: ['HM00590BL', 'HM00595B', 'HM00595BL']
+  Sample names: ['Ladies 2pc Mardigras Skull  Hard Case Cosmetic  Set', 'Ladies Clear See Thru GLAM Theme Cosmetic Pouch Bag']
+
+HW0080: 31 products
+  Examples: ['HW00801B', 'HW00801G', 'HW00801P']
+  Sample names: ['Ladies Faux Leather Fashion Wallet', 'Ladies Faux Leather Fashion Wallet']
+
+HL0042: 20 products
+  Examples: ['HL00425', 'HL00424', 'HL00429B']
+  Sample names: ['Abstract Eiffel Tower Print Duffle Bag Weekender Bag Travel', 'Glittery Night in Paris Print Duffle Bag Weekender Bag']
+
+HM0054: 20 products
+  Examples: ['HM00546FU', 'HM00546MFU', 'HM00546MIN']
+  Sample names: ['Faux Fur Kitty Theme Pouch Cosmetic Bag', 'Faux Fur Kitty Theme Pouch Cosmetic Bag']
+
+HW0083: 20 products
+  Examples: ['HW00835PN', 'HW00835BL', 'HW00832BL']
+  Sample names: ['Ladies "Good Vibes" Themed Coin Purse Small Wallet', 'Ladies "Good Vibes" Themed Coin Purse Small Wallet']
+
+HW0084: 20 products
+  Examples: ['HW00848PN', 'HW00848BL', 'HW00849BL']
+  Sample names: ['Ladies Faith Printed Coin Purse Small Wallet', 'Ladies Faith Printed Coin Purse Small Wallet']
+
+GCH148: 18 products
+  Examples: ['GCH1486B', 'GCH1486BEI', 'GCH1486G']
+  Sample names: ['Faux Leather Ladies Card Holder', 'Faux Leather Ladies Card Holder']
+
+HW0076: 18 products
+  Examples: ['HW00768B', 'HW00768G', 'HW00768GR']
+  Sample names: ['Fully Beaded Ladies Wristlet Wallet', 'Fully Beaded Ladies Wristlet Wallet']
+
+HD0038: 17 products
+  Examples: ['HD00383', 'HD00381', 'HD00385BL']
+  Sample names: ['Ladies Artistic Evil Eye Theme Top Zipper Coin Bag', 'Ladies Colorful Evil Eye Theme Top Zipper Coin Bag']
+
+HW0085: 17 products
+  Examples: ['HW00852BL', 'HW00852PN', 'HW00853BL']
+  Sample names: ['Ladies BEST TEACHER Theme Leather Small Wallet\xa0', 'Ladies BEST TEACHER Theme Leather Small Wallet\xa0']
+
+HM0056: 17 products
+  Examples: ['HM00562', 'HM00561', 'HM00560']
+  Sample names: ['Ladies Colorful EVIL EYE Abstract  Wristlet Handbag', 'Ladies Colorful EVIL EYE Flowers  Wristlet Handbag']
+
+HM0052: 15 products
+  Examples: ['HM00527BL', 'HM00527CL', 'HM00527GR']
+  Sample names: ['Ladies Clear See Thru Travel Cosmetic Travel Pouch', 'Ladies Clear See Thru Travel Cosmetic Travel Pouch']
+
+HL0049: 14 products
+  Examples: ['HL00499B', 'HL00499G', 'HL00499S']
+  Sample names: ['Animal Print Stripe Carry-ON Duffle Bag Weekender Bag', 'Animal Print Stripe Carry-ON Duffle Bag Weekender Bag']
+
+HM0060: 13 products
+  Examples: ['HM00602BL', 'HM00602G', 'HM00602GY']
+  Sample names: ['3 Pcs Cosmetic Bag Set', '3 Pcs Cosmetic Bag Set']
+
+HL0050: 12 products
+  Examples: ['HL00502NVY', 'HL00502R', 'HL00507']
+  Sample names: ['Evil Eye Hamsa Print Nylon Shopping Cart', 'Evil Eye Hamsa Print Nylon Shopping Cart']
+
+GK1774: 12 products
+  Examples: ['GK1774AB', 'GK1774B', 'GK1774BL']
+  Sample names: ['Ladies Rhinestone Wristlet  Coin Purse Key Chain', 'Ladies Rhinestone Wristlet  Coin Purse Key Chain']
+
+HW0074: 11 products
+  Examples: ['HW00743', 'HW00744', 'HW00746']
+  Sample names: ['Evening In Paris Print Ladies Wallet', 'Ladies Abstract Print Spring Color Wallet']
+
+HW0082: 11 products
+  Examples: ['HW00823', 'HW00824', 'HW00822']
+  Sample names: ['Ladies HAMSA EVIL EYE SMALL Zip Around Wallet', 'Ladies MARDI GRAS FLORAL SKULL SMALL Zip Around Wallet']
+
+HD0055: 10 products
+  Examples: ['HD00557', 'HD00556', 'HD00553']
+  Sample names: ['Ladies "Be a Dolly" Themed Beaded Coin Purse\xa0', 'Ladies Cowgirl Boot Beaded Coin Purse\xa0']
+
+HD0056: 10 products
+  Examples: ['HD00567', 'HD00561', 'HD00565']
+  Sample names: ['Ladies Best Mom Ever Themed Beaded Coin Purse', 'Ladies Bride Themed Beaded Coin Purse\xa0']
+
+HX0036: 10 products
+  Examples: ['HX00369', 'HX00368', 'HX00364']
+  Sample names: ['Ladies Black Full Beaded Star Theme Cross Body Bag Handbag', 'Ladies Fully Beaded Evil Eye Theme Cross Body Handbag']
+
+HD0039: 10 products
+  Examples: ['HD00393', 'HD00397', 'HD00396']
+  Sample names: ['Ladies FLEUR DI LIS Themed Coin Purse', 'Ladies Fully Beaded Blue EVIL EYE Theme Coin Purse']
+
+HD0051: 10 products
+  Examples: ['HD00513', 'HD00514', 'HD00515']
+  Sample names: ['Ladies Fully Beaded  NURSE Themed Coin Purse', 'Ladies Fully Beaded  PICKLE BALL QUEEN Coin Purse']
+
+HD0054: 10 products
+  Examples: ['HD00546', 'HD00543', 'HD00541']
+  Sample names: ['Ladies Fully Beaded Amazing Teacher Coin Purse', 'Ladies Fully Beaded Best Mom Themed Coin Purse']
+
+HD0053: 10 products
+  Examples: ['HD00537', 'HD00534', 'HD00532']
+  Sample names: ['Ladies Fully Beaded Best Mom Themed Coin Purse\xa0', 'Ladies Fully Beaded Dog Mom Themed Coin Purse']
+
+HD0049: 10 products
+  Examples: ['HD00493', 'HD00492', 'HD00491']
+  Sample names: ['Ladies Fully Beaded Blue TOUCH DOWN Theme Coin Purse', 'Ladies Fully Beaded GAME DAY Theme Coin Purse']
+
+HD0050: 10 products
+  Examples: ['HD00507', 'HD00502', 'HD00508']
+  Sample names: ['Ladies Fully Beaded Blue White GAME DAY Theme Coin Purse', 'Ladies Fully Beaded Blue White GAME DAY Theme Coin Purse']
+
+BT0188: 10 products
+  Examples: ['BT0188BR', 'BT0188CH', 'BT0188FU']
+  Sample names: ['Sequined  Half Moon Fanny Pack', 'Sequined  Half Moon Fanny Pack']
+
+HD0057: 9 products
+  Examples: ['HD00570', 'HD00575', 'HD00579']
+  Sample names: ['Ladies Animal Themed Beaded Coin Purse\xa0', 'Ladies Bowtie Themed Beaded Coin Purse']
+
+HD0058: 9 products
+  Examples: ['HD00582', 'HD00584', 'HD00589']
+  Sample names: ['Ladies Cactus Theme Beaded Coin Purse', 'Ladies I Love USA Printed Beaded Coin Purse\xa0']
+
+HD0042: 9 products
+  Examples: ['HD00421', 'HD00424', 'HD00429']
+  Sample names: ['Ladies Fully Beaded Black GAME DAY Coin Purse', 'Ladies Fully Beaded Blue Flamingo Theme Coin Purse']
+
+HD0035: 9 products
+  Examples: ['HD00356', 'HD00352', 'HD00350']
+  Sample names: ['Ladies Fully Beaded HEART BREAKER Theme Fashion Coin Purse', 'Ladies Fully Beaded OH BABY Theme Fashion Coin Purse']
+
+GK2124: 9 products
+  Examples: ['GK2124AB', 'GK2124BL', 'GK2124CH']
+  Sample names: ['Ladies Rhinestone Wristlet Card Holder Coin Purse Handbag', 'Ladies Rhinestone Wristlet Card Holder Coin Purse Handbag']
+
+BT0198: 9 products
+  Examples: ['BT0198FU', 'BT0198GY', 'BT0198NVY']
+  Sample names: ['Ladies Solid Color Quilted Microfiber Waist Handbag', 'Ladies Solid Color Quilted Microfiber Waist Handbag']
+
+HM0058: 8 products
+  Examples: ['HM00587', 'HM00588', 'HM00582']
+  Sample names: ['2 pc Evil Eye Printed Cosmetic Case Set', 'Ladies 2pc HAMSA EVIL EYE  Hard Case Cosmetic  Set']
+
+HL0043: 8 products
+  Examples: ['HL00431', 'HL00436', 'HL00438']
+  Sample names: ['A Day in Paris Print Duffle Bag Weekender Bag Travel Bag', 'Clear Blue Sky Paris Print Duffle Bag Weekender Bag Travel']
+
+HL0044: 8 products
+  Examples: ['HL00447', 'HL00448', 'HL00442']
+  Sample names: ['American Pride Flag Print Duffle Bag Weekender Bag Travel', 'Cheetah Print Duffle Bag Weekender Bag Travel Bag']
+
+TO4062: 8 products
+  Examples: ['TO40622', 'TO40628', 'TO40621']
+  Sample names: ['Camouflaged Fully Beaded Handbag Strap', 'Fully Beaded Hamsa Guitar Strap Style Handbag Strap']
+
+HD0036: 8 products
+  Examples: ['HD00361', 'HD00367', 'HD00362']
+  Sample names: ['Ladies  Fully Beaded PARTY Theme Coin Purse', 'Ladies Fully Beaded Donut Meme Print Coin Purse']
+
+GCH147: 8 products
+  Examples: ['GCH1479', 'GCH1477', 'GCH1472']
+  Sample names: ['Ladies Beaded DOG MOM Theme Card Holder', 'Ladies Beaded EVIL EYE Theme Card Holder']
+
+HL0046: 8 products
+  Examples: ['HL00467', 'HL00466', 'HL00462']
+  Sample names: ['Ladies Black and White \xa0Spotted Carry On Hand Bag\xa0', 'Ladies Brown Leopard Carry On Hand Bag\xa0']
+
+HX0035: 8 products
+  Examples: ['HX00358AB', 'HX00358G', 'HX00358JT']
+  Sample names: ['Ladies Cell phone Bag with Rhinestones', 'Ladies Cell phone Bag with Rhinestones']
+
+BT0199: 8 products
+  Examples: ['BT0199BEI', 'BT0199FU', 'BT0199GY']
+  Sample names: ['Ladies Clear See Thru Plastic Belt Waist Handbag', 'Ladies Clear See Thru Plastic Belt Waist Handbag']
+
+HD0037: 8 products
+  Examples: ['HD00374', 'HD00378', 'HD00377']
+  Sample names: ['Ladies Fashion Black Fully Beaded XOXO Coin Purse', 'Ladies Festive Fully Beaded HO HO HO Theme Coin Purse']
+
+GK1975: 8 products
+  Examples: ['GK1975B', 'GK1975BEI', 'GK1975BR']
+  Sample names: ['Ladies Faux Leather Ring Handle Wristlet Handbag', 'Ladies Faux Leather Ring Handle Wristlet Handbag']
+
+HD0052: 8 products
+  Examples: ['HD00524', 'HD00528', 'HD00523']
+  Sample names: ['Ladies Fully Beaded A+ Teacher Theme Coin Purse', 'Ladies Fully Beaded Blessed Themed Coin Purse']
+
+HD0046: 8 products
+  Examples: ['HD00467', 'HD00466', 'HD00462']
+  Sample names: ['Ladies Fully Beaded Happy Face Theme Coin Purse', 'Ladies Fully Beaded HELLO SUNSHINE Theme Coin Purse']
+
+HW0078: 8 products
+  Examples: ['HW00789', 'HW00787', 'HW00786']
+  Sample names: ['Ladies Fully Beaded Multi Color XOXO Wristlet Wallet Handbag', 'Ladies Fully Beaded Tequila Wristlet Wallet Handbag']
+
+BT0197: 8 products
+  Examples: ['BT0197B', 'BT0197BEI', 'BT0197GY']
+  Sample names: ['Ladies Solid Color Mircofiber Waistbag Handbag', 'Ladies Solid Color Mircofiber Waistbag Handbag']
+
+HL0047: 7 products
+  Examples: ['HL00475', 'HL00476', 'HL00477']
+  Sample names: ['Bright Eiffel Tower Paris Print Duffle Bag/Weekender Bag', 'Ladies Eiffel Tower Printed Carry On Hand Bag\xa0']
+
+HL0048: 7 products
+  Examples: ['HL00481', 'HL00483', 'HL00482']
+  Sample names: ['Eiffel Tower Paris City Print Duffle Bag/Weekender Bag', 'Ladies Eiffel Tower Printed Carry On Hand Bag']
+
+BT0174: 7 products
+  Examples: ['BT0174BL', 'BT0174BR', 'BT0174FU']
+  Sample names: ['Faux Leather Shinny Animal Print Ladies Fanny Pack', 'Faux Leather Shinny Animal Print Ladies Fanny Pack']
+
+HD0030: 7 products
+  Examples: ['HD00309', 'HD00303', 'HD00305']
+  Sample names: ['Fully Beaded EYE Theme Ladies Coin Purse', 'Fully Beaded Ladies Coin Purse with Skull Print Theme']
+
+HW0079: 7 products
+  Examples: ['HW00795', 'HW00797', 'HW00792']
+  Sample names: ['Fully Beaded Multi Color Beach Ladies Wristlet Wallet Bag', 'Ladies Beige Fully Beaded Flower Wristlet Wallet']
+
+HM0051: 7 products
+  Examples: ['HM00515BL', 'HM00515R', 'HM00515YL']
+  Sample names: ['Ladies 3 Piece Clear See Thru Metallic Cosmetic Bag', 'Ladies 3 Piece Clear See Thru Metallic Cosmetic Bag']
+
+HW0072: 7 products
+  Examples: ['HW00729G', 'HW00729S', 'HW00727G']
+  Sample names: ['Ladies Animal Print Mid Size Fashion Wallet', 'Ladies Animal Print Mid Size Fashion Wallet']
+
+HD0040: 7 products
+  Examples: ['HD00409', 'HD00407', 'HD00408']
+  Sample names: ['Ladies Blue  Fully Beaded Evil Eye Coin Purse', 'Ladies Fully Beaded "CASH MONEY"Theme Coin Purse']
+
+BT0175: 7 products
+  Examples: ['BT0175B', 'BT0175BL', 'BT0175BUR']
+  Sample names: ['Ladies Fanny Pack', 'Ladies Fanny Pack']
+
+BT0173: 7 products
+  Examples: ['BT0173BL', 'BT0173BR', 'BT0173FU']
+  Sample names: ['Ladies Faux Leather Suede Animal Print Fanny Pack', 'Ladies Faux Leather Suede Animal Print Fanny Pack']
+
+HD0034: 7 products
+  Examples: ['HD00348', 'HD00342', 'HD00340']
+  Sample names: ['Ladies Fully Beaded BABY Fashion Coin Purse', 'Ladies Fully Beaded Mardi Gras Party Theme Coin Purse']
+
+HD0045: 7 products
+  Examples: ['HD00454', 'HD00451', 'HD00450']
+  Sample names: ['Ladies Fully Beaded Black Baseball Theme Coin Purse', 'Ladies Fully Beaded Black VODKA Theme Coin Purse']
+
+HD0048: 7 products
+  Examples: ['HD00481', 'HD00489', 'HD00488']
+  Sample names: ['Ladies Fully Beaded Botox Money Coin purse', 'Ladies Fully Beaded GAME DAY Theme Coin Purse']
+
+HD0026: 7 products
+  Examples: ['HD00268', 'HD00264', 'HD00262']
+  Sample names: ['Ladies Fully Beaded MOM Theme Coin Purse', 'Ladies Fully Beaded Red LOVE Theme Coin Purse']
+
+HW0081: 7 products
+  Examples: ['HW00811', 'HW00810', 'HW00817']
+  Sample names: ['Ladies HAMSA & Flower Print Fashion Wallet', 'Ladies HAMSA & Flower Print Fashion Wallet']
+
+HW0073: 6 products
+  Examples: ['HW00739', 'HW00734', 'HW00732B']
+  Sample names: ['Animal Print Colorful Ladies Wallet', 'Eiffel Tower Paris Print Ladies Ziparound Wallet']
+
+TO4061: 6 products
+  Examples: ['TO40615', 'TO40619', 'TO40614']
+  Sample names: ['Fully Beaded Stripe Guitar Strap Style Handbag Strap', 'Ladies Fully Beaded Gold Spotted Handbag Strap']
+
+HD0029: 6 products
+  Examples: ['HD00295', 'HD00291', 'HD00292']
+  Sample names: ['Ladies  Fuchsia FLAMINGO Fully Beaded Coin ', 'Ladies Fully Beaded EVIL EYE Theme Coin Purse']
+
+HM0057: 6 products
+  Examples: ['HM00573B', 'HM00573PN', 'HM00572']
+  Sample names: ['Ladies Clear See Thru Plastic Color Trimmed Handbag', 'Ladies Clear See Thru Plastic Color Trimmed Handbag']
+
+HD0047: 6 products
+  Examples: ['HD00476', 'HD00479', 'HD00473']
+  Sample names: ['Ladies Fully Beaded Best Teacher Themed Coin Purse', 'Ladies Fully Beaded Happy Hour Themed Coin Purse\xa0']
+
+HD0033: 6 products
+  Examples: ['HD00335', 'HD00338', 'HD00332']
+  Sample names: ['Ladies Fully Beaded Colorful Fire Fly Coin Purse', 'Ladies Fully Beaded Colorful GOOD VIBES Coin Purse']
+
+HD0044: 6 products
+  Examples: ['HD00445', 'HD00447', 'HD00448']
+  Sample names: ['Ladies Fully Beaded EVIL EYE  Coin Purse', 'Ladies Fully Beaded Paddle Print  Coin Purse']
+
+HL0045: 5 products
+  Examples: ['HL00453', 'HL00458', 'HL00455']
+  Sample names: ['Animal Print Duffle Bag Weekender Bag Travel Bag', 'Crazy Paisley Print Duffle Bag Weekender Bag Travel Bag']
+
+HM0046: 5 products
+  Examples: ['HM00467', 'HM00466', 'HM00462BL']
+  Sample names: ['Ladies 2 Piece Paris Night Print Cosmetic Case Set', 'Ladies Faux Leather Paris Eiffel Tower Cosmetic Bag']
+
+HD0022: 5 products
+  Examples: ['HD00220', 'HD00221', 'HD00223']
+  Sample names: ['Ladies Beaded Cash Money Themed Coin Purse', 'Ladies Evil Eye Themed Beaded Coin Purse']
+
+HD0041: 5 products
+  Examples: ['HD00417', 'HD00418', 'HD00411']
+  Sample names: ['Ladies Blue Fully Beaded HAMSA EYE Coin Purse', 'Ladies Blue Fully Beaded WONDERING EYE Coin Purse']
+
+BT0166: 5 products
+  Examples: ['BT0166B', 'BT0166BR', 'BT0166GR']
+  Sample names: ['Ladies Faux Leather Crock Print Fanny Pack', 'Ladies Faux Leather Crock Print Fanny Pack']
+
+BT0167: 5 products
+  Examples: ['BT0167B', 'BT0167BR', 'BT0167GR']
+  Sample names: ['Ladies Faux Leather Rectangle Crock Print Fanny Pack', 'Ladies Faux Leather Rectangle Crock Print Fanny Pack']
+
+HD0043: 5 products
+  Examples: ['HD00435', 'HD00432', 'HD00436']
+  Sample names: ['Ladies Fully Beaded BE MINE  Printed Cosmetic Bag', 'Ladies Fully Beaded CHEERS Printed Cosmetic Bag']
+
+HD0031: 5 products
+  Examples: ['HD00314', 'HD00316', 'HD00319']
+  Sample names: ['Ladies Fully Beaded EVIL EYE Theme Coin Purse', 'Ladies Fully Beaded EYE Theme Coin Purse']
+
+HM0053: 5 products
+  Examples: ['HM00537BL', 'HM00537FU', 'HM00537PN']
+  Sample names: ['Ladies Sequined Cosmetic Pouch Bag', 'Ladies Sequined Cosmetic Pouch Bag']
+
+BT0189: 5 products
+  Examples: ['BT0189CH', 'BT0189FU', 'BT0189PU']
+  Sample names: ['Sequinced Fanny Pack', 'Sequinced Fanny Pack']
+
+BT0190: 5 products
+  Examples: ['BT0190BL', 'BT0190FU', 'BT0190PU']
+  Sample names: ['Sequinced Fanny Pack', 'Sequinced Fanny Pack']
+
+HL0040: 4 products
+  Examples: ['HL00401', 'HL00408', 'HL00400']
+  Sample names: ['A  White Paris Print Duffle Bag Weekender Bag Travel Bag', 'Back to Nature in Paris Duffle Bag Weekender Bag Travel Bag']
+
+HD0025: 4 products
+  Examples: ['HD00255', 'HD00256', 'HD00251']
+  Sample names: ['Evil Eye Fully Beaded Ladies Coin Purse', 'Fully Beaded White Ying Yang Theme Ladies Coin Purse']
+
+HD0023: 4 products
+  Examples: ['HD00238', 'HD00236', 'HD00239']
+  Sample names: ["Fully Beaded A's Of Spades Theme Ladies Coin Purse", 'Ladies Beaded Piano Themed Coin Purse']
+
+HD0021: 4 products
+  Examples: ['HD00214', 'HD00216', 'HD00212']
+  Sample names: ['Fully Beaded Rainbow Colored Heart Theme Ladies Coin Purse', 'Ladies Fully Beaded Target Rich Fashion Coin Purse']
+
+HW0086: 4 products
+  Examples: ['HW00860', 'HW00863', 'HW00862']
+  Sample names: ['Ladies AMAZING TEACHER Themed Rhinestone Wallet', 'Ladies BLESSED Themed Rhinestone Wallet\xa0']
+
+BT0177: 4 products
+  Examples: ['BT0177B', 'BT0177GR', 'BT0177R']
+  Sample names: ['Ladies Faux Leather Double Zipper Fanny Pack', 'Ladies Faux Leather Double Zipper Fanny Pack']
+
+HD0020: 4 products
+  Examples: ['HD00200', 'HD00208', 'HD00207']
+  Sample names: ['Ladies Fully Beaded Fashion Coin Purse', 'Ladies Fully Beaded HAPPY FACE Theme Fashion Coin Purse']
+
+HD0027: 4 products
+  Examples: ['HD00276', 'HD00275', 'HD00271']
+  Sample names: ['Ladies Fully Beaded Jelly Fish Theme Coin Purse', 'Ladies Fully Beaded PEACE SIGN THEME Coin Purse']
+
+BT0158: 4 products
+  Examples: ['BT0158BZ', 'BT0158NVY', 'BT0158OL']
+  Sample names: ['Ladies Nylon Fabric Fanny Pack', 'Ladies Nylon Fabric Fanny Pack']
+
+HX0033: 4 products
+  Examples: ['HX00331BL', 'HX00331GR', 'HX00331S']
+  Sample names: ['Ladies Patent Leather Cell Phone Case Handbag', 'Ladies Patent Leather Cell Phone Case Handbag']
+
+GK1923: 4 products
+  Examples: ['GK1923NVY', 'GK1923PN', 'GK1923YL']
+  Sample names: ['Plush Happy Dog Fashion Keychain', 'Plush Happy Dog Fashion Keychain']
+
+HL0039: 3 products
+  Examples: ['HL00396', 'HL00399', 'HL00390']
+  Sample names: ['A Night In Paris Print Travel Bag Weekender Bag Duffle Bag', 'Morning Breeze in Paris Print Duffle Bag Weekender Bag']
+
+BT0192: 3 products
+  Examples: ['BT0192B', 'BT0192G', 'BT0192S']
+  Sample names: ['Clear See Thru Fanny Pack Waist Bag', 'Clear See Thru Fanny Pack Waist Bag']
+
+HL0041: 3 products
+  Examples: ['HL00417', 'HL00419', 'HL00418']
+  Sample names: ['Cloudy Night in Paris Print Duffle Bag Weekender Bag Travel', 'Flower Garden Print Duffle Bag Weekender Bag Travel Bag']
+
+HD0019: 3 products
+  Examples: ['HD00192', 'HD00199', 'HD00196']
+  Sample names: ['Ladies Beaded Strawberries Coin Purse Small Wallet', 'Ladies Beaded Themed Coin Purse Small Wallet']
+
+HW0077: 3 products
+  Examples: ['HW00778', 'HW00777', 'HW00771']
+  Sample names: ['Ladies Black Fully Beaded Gold Star Wristlet Wallet', 'Ladies Fully Beaded Multi color Stripes Wristlet Wallet']
+
+HW0075: 3 products
+  Examples: ['HW00758', 'HW00757', 'HW00756']
+  Sample names: ['Ladies Butterfly Print Wallet', 'Ladies Multiple Butterfly Print Fashion Wallet']
+
+HM0055: 3 products
+  Examples: ['HM00558PU', 'HM00559', 'HM00555']
+  Sample names: ['Ladies Clear See Thru GLAM Theme Cosmetic Pouch Bag', 'Ladies Colorful HAMSA Themed Blue Wristlet Handbag']
+
+BT0194: 3 products
+  Examples: ['BT0194B', 'BT0194G', 'BT0194S']
+  Sample names: ['Ladies Clear See Thru Rectangle Fanny Pack', 'Ladies Clear See Thru Rectangle Fanny Pack']
+
+HD0059: 3 products
+  Examples: ['HD00590', 'HD00593', 'HD00591']
+  Sample names: ['Ladies Drink Themed Beaded Coin Purse\xa0', 'Ladies Soccer Ball Themed Beaded Coin Purse']
+
+VS0673: 3 products
+  Examples: ['VS0673B', 'VS0673BEI', 'VS0673GY']
+  Sample names: ['Ladies Fashion Knitted Cardigan', 'Ladies Fashion Knitted Cardigan']
+
+GK2014: 3 products
+  Examples: ['GK2014B', 'GK2014G', 'GK2014S']
+  Sample names: ['Ladies Faux Leather Animal Print Wristlet Wallet Bag', 'Ladies Faux Leather Animal Print Wristlet Wallet Bag']
+
+GK2012: 3 products
+  Examples: ['GK2012B', 'GK2012G', 'GK2012S']
+  Sample names: ['Ladies Faux Leather Wristlet Wallet With Solid Ring Handle', 'Ladies Faux Leather Wristlet Wallet With Solid Ring Handle']
+
+GK2013: 3 products
+  Examples: ['GK2013B', 'GK2013G', 'GK2013S']
+  Sample names: ['Ladies Faux Leather Wristlet Wallet With Solid Ring Handles', 'Ladies Faux Leather Wristlet Wallet With Solid Ring Handles']
+
+HD0028: 3 products
+  Examples: ['HD00282', 'HD00288', 'HD00281']
+  Sample names: ['Ladies Fully Beaded Flower Theme Coin Purse', 'Ladies Fully Beaded Spotted Red Theme Coin Purse']
+
+GK2080: 3 products
+  Examples: ['GK2080CL', 'GK2080CH', 'GK2080PN']
+  Sample names: ['Ladies Rhinestone Elephant Dream Catcher Keychain\xa0', 'Ladies Rhinestone Elephant Dream Catcher Keychain\xa0']
+
+GK1806: 3 products
+  Examples: ['GK1806BL', 'GK1806YL', 'GK1806W']
+  Sample names: ['Ladies Unicorn Keychain\xa0', 'Ladies Unicorn Keychain\xa0']
+
+GK1936: 3 products
+  Examples: ['GK1936GY', 'GK1936PN', 'GK1936BEI']
+  Sample names: ['Plush Teddy Bear Fashion Keychain', 'Plush Teddy Bear Fashion Keychain']
+
+GK2037: 3 products
+  Examples: ['GK2037CH', 'GK2037CL', 'GK2037R']
+  Sample names: ['Rhinestone Shoulder Handbag Shaped Key Chain', 'Rhinestone Shoulder Handbag Shaped Key Chain']
+
+GK1872: 3 products
+  Examples: ['GK1872AB', 'GK1872CH', 'GK1872PN']
+  Sample names: ['Rhinestone Stiletto Boot Shaped Fashion Keychain ', 'Rhinestone Stiletto Boot Shaped Fashion Keychain ']
+
+HD0018: 2 products
+  Examples: ['HD00187', 'HD00184']
+  Sample names: ['Brown Ladies Fully Beaded Coin Purse Brown Star', 'Ladies Festive Fully Beaded HEART Theme Coin Purse']
+
+TO4063: 2 products
+  Examples: ['TO40630', 'TO40631']
+  Sample names: ['Fully Beaded Guitar Strap Style Handbag Strap', 'Ladies Fully Beaded  Hamsa Theme Bag Strap']
+
+GK2010: 2 products
+  Examples: ['GK2010B', 'GK2010G']
+  Sample names: ['Ladies Animal Print Tassel Wristlet Wallet  Key Chain', 'Ladies Animal Print Tassel Wristlet Wallet  Key Chain']
+
+GK2195: 2 products
+  Examples: ['GK2195PN', 'GK2195R']
+  Sample names: ['Ladies Ballon Dog and Heart Bag Charm Key Chain', 'Ladies Ballon Dog and Heart Bag Charm Key Chain']
+
+BT0170: 2 products
+  Examples: ['BT0170B', 'BT0170BR']
+  Sample names: ['Ladies Faux Leather Animal Print Fanny Pack', 'Ladies Faux Leather Animal Print Fanny Pack']
+
+HL0038: 2 products
+  Examples: ['HL00387', 'HL00385']
+  Sample names: ['Ladies Faux Leather Travel Bag Duffle Bag Weekender Bag', 'Shinny Snake Print Faux Leather Duffle Bag/Weekender Bag']
+
+HX0037: 2 products
+  Examples: ['HX00370', 'HX00371']
+  Sample names: ['Ladies Fully Beaded Flower Theme Cross Body Bag Handbag', 'Ladies Fully Beaded Glass Wine Theme Cross Body Bag Handbag']
+
+GK2192: 2 products
+  Examples: ['GK2192W', 'GK2192BZ']
+  Sample names: ['Ladies Mini Purse Bag Charm Key Chain', 'Ladies Mini Purse Bag Charm Key Chain']
+
+HW0071: 2 products
+  Examples: ['HW00717BL', 'HW00717YL']
+  Sample names: ['Ladies Patent Leather Wallet Handbag', 'Ladies Patent Leather Wallet Handbag']
+
+BT0193: 2 products
+  Examples: ['BT0193G', 'BT0193S']
+  Sample names: ['Ladies Rhinestone Fanny Pack', 'Ladies Rhinestone Fanny Pack']
+
+GK1836: 2 products
+  Examples: ['GK1836BL', 'GK1836W']
+  Sample names: ['Ladies Stylish Unicorn Keychain\xa0', 'Ladies Stylish Unicorn Keychain\xa0']
+
+GK1898: 2 products
+  Examples: ['GK1898W', 'GK1898PN']
+  Sample names: ['Ladies Swan Stylish Keychain', 'Ladies Swan Stylish Keychain']
+
+HD0024: 2 products
+  Examples: ['HD00247', 'HD00243']
+  Sample names: ['Multiple Color HAPPY FACE Theme Ladies Coin Purse', 'Red Heart & LOVE Fully Beaded Ladies Coin Purse']
+
+GK1925: 2 products
+  Examples: ['GK1925BL', 'GK1925PN']
+  Sample names: ['Plush Hamster Fashion Keychain\xa0', 'Plush Hamster Fashion Keychain\xa0']
+
+GK1899: 2 products
+  Examples: ['GK1899GY', 'GK1899NVY']
+  Sample names: ['Plush Shark Fashionable Keychain', 'Plush Shark Fashionable Keychain']
+
+BT0196: 2 products
+  Examples: ['BT0196B', 'BT0196BR']
+  Sample names: ['Rhinestone Fanny Pack', 'Rhinestone Fanny Pack']
+
+GK1873: 2 products
+  Examples: ['GK1873B', 'GK1873FU']
+  Sample names: ['Rhinestone Stiletto Shoe Shaped Fashion Keychain ', 'Rhinestone Stiletto Shoe Shaped Fashion Keychain ']
+
+GK1874: 2 products
+  Examples: ['GK1874BEI', 'GK1874BL']
+  Sample names: ['Rhinestone Stiletto Shoe Shaped Fashion Keychain ', 'Rhinestone Stiletto Shoe Shaped Fashion Keychain ']
+
+HW0045: 1 products
+  Examples: ['HW00450']
+  Sample names: ['American Pride New York USA Flag Print Ladies Wallet']
+
+GK1961: 1 products
+  Examples: ['GK1961']
+  Sample names: ['American Pride USA Flag Print Ladies Wristlet Bag Wallet']
+
+GK1964: 1 products
+  Examples: ['GK1964']
+  Sample names: ['Animal Print Round Handle Ladies Wristlet Bag Wallet']
+
+GK1962: 1 products
+  Examples: ['GK1962']
+  Sample names: ['Carnations Animal Print Ladies Round Handle Wristlet Bag']
+
+GK1786: 1 products
+  Examples: ['GK1786']
+  Sample names: ['Ceremonial Elephant Print Wooden Handle Ladies Wristlet Bag']
+
+GK1789: 1 products
+  Examples: ['GK1789']
+  Sample names: ['Cheetah Flower Print Solid Handle Ladies Wristlet Bag Wallet']
+
+GK1963: 1 products
+  Examples: ['GK1963']
+  Sample names: ['Cheetah Print Round Handle Ladies Wristlet Bag Wallet']
+
+HD0017: 1 products
+  Examples: ['HD00175']
+  Sample names: ['Fully Beaded Multi Color Brown Ladies Coin Purse']
+
+BT0165: 1 products
+  Examples: ['BT0165']
+  Sample names: ['Glittery Animal Print Ladies Fanny Pack']
+
+GK2188: 1 products
+  Examples: ['GK2188']
+  Sample names: ['Ladies AMAZING TEACHER Print Theme KeyChain Mirror']
+
+GK1969: 1 products
+  Examples: ['GK1969']
+  Sample names: ['Ladies American Flag Print Wristlet Handbag']
+
+GK1788: 1 products
+  Examples: ['GK1788']
+  Sample names: ['Ladies Animal Print Wristlet Handbag']
+
+GK2178: 1 products
+  Examples: ['GK2178']
+  Sample names: ['Ladies BLESSED Theme Compact Mirror KeyChain']
+
+GK2165: 1 products
+  Examples: ['GK2165']
+  Sample names: ['Ladies CAT MOM themed Fashion keychain mirror']
+
+BT0200: 1 products
+  Examples: ['BT0200']
+  Sample names: ['Ladies Clear See Thru  Fanny Pack  Handbag']
+
+BT0191: 1 products
+  Examples: ['BT0191CL']
+  Sample names: ['Ladies Clear See Thru Casual Fanny Pack']
+
+BT0201: 1 products
+  Examples: ['BT0201']
+  Sample names: ['Ladies Clear See Thru Mardi Gras Fanny Pack  Handbag']
+
+GK2015: 1 products
+  Examples: ['GK2015B']
+  Sample names: ['Ladies Clear See Thru Wristlet Wallet Bag']
+
+BT0142: 1 products
+  Examples: ['BT0142']
+  Sample names: ['Ladies Denim Jean Fanny Pack with Rhinestones']
+
+GK1838: 1 products
+  Examples: ['GK1838GY']
+  Sample names: ['Ladies Dinosaur Keychain\xa0']
+
+GK2154: 1 products
+  Examples: ['GK2154']
+  Sample names: ['Ladies Evil Eye Hamsa Keychain']
+
+GK2004: 1 products
+  Examples: ['GK2004']
+  Sample names: ['Ladies Fashion Snake Tassel Wristlet Wallet  Key Chain']
+
+GK1968: 1 products
+  Examples: ['GK1968']
+  Sample names: ['Ladies Faux Leather Paris Print Wristlet Handbag']
+
+GK2193: 1 products
+  Examples: ['GK2193']
+  Sample names: ['Ladies Foot Ball And Baseball Bag Charm Key Chain']
+
+hbg104: 1 products
+  Examples: ['hbg104638']
+  Sample names: ['Ladies Fully Beaded Fleur Di Lis Print Clutch Bag handbag']
+
+HD0032: 1 products
+  Examples: ['HD00329']
+  Sample names: ['Ladies Fully Beaded Heart Shaped LOVE Coin Purse']
+
+TO4060: 1 products
+  Examples: ['TO40609']
+  Sample names: ['Ladies Fully Beaded Spotted Handbag Straps']
+
+GK2173: 1 products
+  Examples: ['GK2173']
+  Sample names: ['Ladies GAME DAY Theme Compact Mirror KeyChain']
+
+HBB104: 1 products
+  Examples: ['HBB104426OR']
+  Sample names: ['Ladies Glittery Cross Body Shoulder Bag Handbag']
+
+GK2168: 1 products
+  Examples: ['GK2168']
+  Sample names: ['Ladies GOOD VIBES theme Fashion KEYCHAIN mirror']
+
+GK2164: 1 products
+  Examples: ['GK2164']
+  Sample names: ['Ladies happy face themed Fashion keychain mirror']
+
+GK2163: 1 products
+  Examples: ['GK2163']
+  Sample names: ['Ladies happy face themed Fashion keychain mirror']
+
+GK2175: 1 products
+  Examples: ['GK2175']
+  Sample names: ['Ladies HOWDY Theme Compact Mirror KeyChain']
+
+GK2170: 1 products
+  Examples: ['GK2170']
+  Sample names: ['Ladies HOWDY theme Fashion KEYCHAIN mirror']
+
+BT0202: 1 products
+  Examples: ['BT0202']
+  Sample names: ['Ladies Microfiber HAMSA Rhinestone Belt Waist Handbag']
+
+GK2177: 1 products
+  Examples: ['GK2177']
+  Sample names: ['Ladies MOM Theme Compact Mirror KeyChain']
+
+GK2206: 1 products
+  Examples: ['GK2206']
+  Sample names: ['Ladies Mom Themed Beaded Wristlet Strap KeyChain']
+
+HBG102: 1 products
+  Examples: ['HBG102961']
+  Sample names: ['Ladies Natural Eiffel Tower Paris Print Tote Handbag']
+
+BT0150: 1 products
+  Examples: ['BT0150KH']
+  Sample names: ['Ladies Natural Straw Fanny Packs']
+
+GK1958: 1 products
+  Examples: ['GK1958']
+  Sample names: ['Ladies Paris Theme Printed Wristlet Handbag']
+
+GK2169: 1 products
+  Examples: ['GK2169']
+  Sample names: ['Ladies PICKLE BALL theme Fashion KEYCHAIN mirror']
+
+GK2167: 1 products
+  Examples: ['GK2167']
+  Sample names: ['Ladies PICKLE BALLER theme Fashion KEYCHAIN mirror']
+
+GK1892: 1 products
+  Examples: ['GK1892BR']
+  Sample names: ['Ladies Poodle Stylish Keychain']
+
+GK1889: 1 products
+  Examples: ['GK18892GY']
+  Sample names: ['Ladies Poodle Stylish Keychain']
+
+GK2166: 1 products
+  Examples: ['GK2166']
+  Sample names: ['Ladies QUEEN themed Fashion keychain mirror']
+
+BG1052: 1 products
+  Examples: ['BG105209S']
+  Sample names: ['Ladies Rhinestone Top Handle Tote Hand Bag\xa0']
+
+HHBG10: 1 products
+  Examples: ['HHBG105218S']
+  Sample names: ['Ladies Rhinestone Tote Style Summer Bag\xa0']
+
+GK2196: 1 products
+  Examples: ['GK2196']
+  Sample names: ['Ladies Ribbon Bag Charm Key Chain']
+
+GK2191: 1 products
+  Examples: ['GK2191']
+  Sample names: ['Ladies Silver Star Bag Charm Key Chain\xa0']
+
+GK2194: 1 products
+  Examples: ['GK2194']
+  Sample names: ['Ladies Sport Balls Bag Charm Key Chain']
+
+GK2203: 1 products
+  Examples: ['GK2203']
+  Sample names: ['Ladies Teach Themed Beaded Wristlet Strap KeyChain']
+
+HBF105: 1 products
+  Examples: ['HBF105199S']
+  Sample names: ['Ladies Top Handle Fashion Evening Handbag']
+
+GK2176: 1 products
+  Examples: ['GK2176']
+  Sample names: ['Ladies XOXO Theme Compact Mirror KeyChain']
+
+GK2205: 1 products
+  Examples: ['GK2205']
+  Sample names: ['Ladies XOXO \xa0Fully Beaded Wristlet Strap Keychain']
+
+GK1965: 1 products
+  Examples: ['GK1965']
+  Sample names: ['Leopard Print Round Handle Ladies Wristlet Bag Wallet']
+
+GK1791: 1 products
+  Examples: ['GK1791']
+  Sample names: ['Night Life Paris Print Ladies Round Handle Wristlet Bag']
+
+GK1794: 1 products
+  Examples: ['GK1794']
+  Sample names: ['Nostalgic Summer Spring in Paris Print Ladies Wristlet Bag']
+
+GK1918: 1 products
+  Examples: ['GK1918GY']
+  Sample names: ['Plush Dog Fashion Keychain']
+
+GK1784: 1 products
+  Examples: ['GK1784']
+  Sample names: ['Sea Shell Print Wooden Handle Ladies Wristlet Bag Wallet']
+
+GK1783: 1 products
+  Examples: ['GK1783']
+  Sample names: ['Wooden Handle Paris Theme Print Ladies Wristlet Bag']
+

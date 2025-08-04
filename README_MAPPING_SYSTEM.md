@@ -229,4 +229,148 @@ FIXED_COLUMN_VALUES = {
   - Priority: Option Image → Product Images (fallback)
   - Product Images are split by whitespace/newlines
   - First URL assigned to SKU Images URL and Detail Images URL
-  - Multiple URLs distributed across SKU Images URL columns 
+  - Multiple URLs distributed across SKU Images URL columns
+
+## 👜 Bag/Handbag Product Prefixes
+
+Based on analysis of the Faire products file, the following SKU prefixes are associated with bag/handbag products:
+
+### Major Bag Prefixes (100+ products):
+- **HBG104**: 1,385 products - Handbags, Crossbody Bags
+- **HBG103**: 550 products - Tote Handbags  
+- **HBG105**: 481 products - Clutch Handbags
+
+### Hat/Cap Prefixes (50+ products):
+- **CAP006**: 144 products - Baseball Caps, Fedora Hats
+- **CAP005**: 60 products - Baseball Caps, Fedora Hats
+
+### Bag Strap/Accessory Prefixes:
+- **TO-407**: 63 products - Chain Belt Accessories
+- **TO-406**: 53 products - Handbag Straps
+- **TO-405**: 49 products - Handbag Straps
+
+### Wallet/Purse Prefixes:
+- **HW0080**: 31 products - Fashion Wallets
+- **HW0083**: 20 products - Coin Purses
+- **HW0084**: 20 products - Coin Purses
+- **HW0076**: 18 products - Wristlet Wallets
+- **HW0085**: 17 products - Small Wallets
+- **HW0074**: 11 products - Ladies Wallets
+- **HW0082**: 11 products - Zip Around Wallets
+
+### Cosmetic Bag Prefixes:
+- **HM0059**: 31 products - Cosmetic Pouches
+- **HM0054**: 20 products - Cosmetic Bags
+- **HM0056**: 17 products - Wristlet Handbags
+- **HM0052**: 15 products - Travel Cosmetic Pouches
+- **HM0060**: 13 products - Cosmetic Bag Sets
+
+### Travel/Duffle Bag Prefixes:
+- **HL0042**: 20 products - Duffle Bags, Weekender Bags
+- **HL0049**: 14 products - Duffle Bags
+- **HL0050**: 12 products - Shopping Cart Bags
+- **HL0043**: 8 products - Duffle Bags
+- **HL0044**: 8 products - Duffle Bags
+
+### Card Holder Prefixes:
+- **GCH148**: 18 products - Card Holders
+- **GCH147**: 8 products - Card Holders
+
+### Coin Purse Prefixes:
+- **HD0038**: 17 products - Coin Bags
+- **HD0055**: 10 products - Beaded Coin Purses
+- **HD0056**: 10 products - Beaded Coin Purses
+- **HD0039**: 10 products - Coin Purses
+- **HD0051**: 10 products - Beaded Coin Purses
+- **HD0054**: 10 products - Beaded Coin Purses
+- **HD0053**: 10 products - Beaded Coin Purses
+- **HD0049**: 10 products - Beaded Coin Purses
+- **HD0050**: 10 products - Beaded Coin Purses
+
+### Crossbody Bag Prefixes:
+- **HX0036**: 10 products - Cross Body Bags
+
+### Fanny Pack Prefixes:
+- **BT0188**: 10 products - Fanny Packs
+- **BT0198**: 9 products - Waist Handbags
+
+### Wristlet Prefixes:
+- **GK1774**: 12 products - Wristlet Coin Purses
+- **GK2124**: 9 products - Wristlet Card Holders
+
+### Total Summary:
+- **198 bag-related prefixes** identified
+- **716 other prefixes** (non-bag products)
+- **914 total unique SKU prefixes** in the dataset
+
+This information can be used for filtering products by category or for targeted processing of specific product types.
+
+## 🎯 Flexible Category System
+
+The script now supports automatic splitting of products into multiple categories based on SKU prefixes. This allows you to create separate upload files for different product types.
+
+### Current Categories:
+- **handbags**: HBG, HW, HM, HL prefixes (2,870 products)
+- **other**: Catch-all for remaining products (2,799 products)
+
+### Adding New Categories:
+
+#### Method 1: Modify CATEGORY_CONFIGS in the script
+```python
+CATEGORY_CONFIGS = {
+    'handbags': {
+        'prefixes': ['HBG', 'HW', 'HM', 'HL'],
+        'output_file': 'output/temu_template_handbags.xlsx',
+        'description': 'Handbags, Wallets, Cosmetic Bags, Travel Bags'
+    },
+    'hats': {
+        'prefixes': ['CAP', 'HAT'],
+        'output_file': 'output/temu_template_hats.xlsx',
+        'description': 'Hats and Caps'
+    },
+    'accessories': {
+        'prefixes': ['TO-', 'ACC'],
+        'output_file': 'output/temu_template_accessories.xlsx',
+        'description': 'Accessories and Straps'
+    },
+    'other': {
+        'prefixes': [],  # Empty = catch-all
+        'output_file': 'output/temu_template_other.xlsx',
+        'description': 'All other products'
+    }
+}
+```
+
+#### Method 2: Use the helper function
+```python
+from Faire2Temu import add_category_config, copy_mapped_data
+
+# Add new categories
+add_category_config('hats', ['CAP', 'HAT'], 'output/temu_template_hats.xlsx', 'Hats and Caps')
+add_category_config('accessories', ['TO-', 'ACC'], 'output/temu_template_accessories.xlsx', 'Accessories')
+
+# Run processing
+copy_mapped_data()
+```
+
+### Benefits:
+- **Automatic categorization** based on SKU prefixes
+- **Separate processing** for each category with full functionality
+- **Easy to extend** - just add new category configurations
+- **Clean separation** - no overlap between files
+- **Maintains all features** - color assignment, pricing, image processing, etc.
+
+### Example Output:
+```
+Category breakdown:
+  Handbags: 2870 products (Handbags, Wallets, Cosmetic Bags, Travel Bags)
+  Hats: 204 products (Hats, Caps, and Headwear)
+  Accessories: 156 products (Accessories, Straps, and Small Items)
+  Other: 2439 products (All other products)
+
+Success! Output files saved to:
+  Handbags: output/temu_template_handbags.xlsx
+  Hats: output/temu_template_hats.xlsx
+  Accessories: output/temu_template_accessories.xlsx
+  Other: output/temu_template_other.xlsx
+``` 

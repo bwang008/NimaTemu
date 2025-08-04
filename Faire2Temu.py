@@ -12,6 +12,18 @@ def copy_mapped_data():
     Enhanced tool to copy mapped data from Faire products to Temu template.
     
     Uses a configurable mapping dictionary to copy multiple columns.
+    
+    CATEGORY SPLITTING:
+    This script now supports splitting products into multiple categories based on SKU prefixes.
+    
+    To add new categories, modify the CATEGORY_CONFIGS dictionary below or use the
+    add_category_config() function before calling copy_mapped_data().
+    
+    Example of adding a new category:
+        add_category_config('hats', ['CAP', 'HAT'], 'output/temu_template_hats.xlsx', 'Hats and Caps')
+        copy_mapped_data()
+    
+    The 'other' category is always the catch-all for products not matching any specific prefixes.
     """
     
     # ============================================================================
@@ -144,53 +156,46 @@ def copy_mapped_data():
     }
     
     # ============================================================================
-    # MAIN PROCESSING FUNCTION
+    # HELPER FUNCTIONS
     # ============================================================================
     
-    try:
-        # File paths
-        faire_file = 'data/faire_products.xlsx'
-        temu_template_file = 'data/temu_template.xlsx'
-        output_file = 'output/temu_upload_generated_with_fixed_values.xlsx'
+    def add_category_config(category_name, prefixes, output_file, description):
+        """
+        Helper function to add new category configurations.
+        This can be called before running the main function to add new categories.
         
-        print("Starting enhanced mapping tool...")
-        print(f"Mapping {len(COLUMN_MAPPINGS)} columns")
-        print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
+        Example:
+            add_category_config('hats', ['CAP', 'HAT'], 'output/temu_template_hats.xlsx', 'Hats and Caps')
+        """
+        global CATEGORY_CONFIGS
+        if 'CATEGORY_CONFIGS' not in globals():
+            CATEGORY_CONFIGS = {}
         
-        # Step 1: Load Faire products file
-        print("Loading Faire products file...")
-        faire_df = pd.read_excel(faire_file, sheet_name='Products')
+        CATEGORY_CONFIGS[category_name] = {
+            'prefixes': prefixes,
+            'output_file': output_file,
+            'description': description
+        }
+        print(f"Added category: {category_name} with prefixes {prefixes}")
+    
+    # ============================================================================
+    # PROCESSING FUNCTION FOR EACH CATEGORY
+    # ============================================================================
+    
+    def process_product_category(product_data, template_file, output_file, category_name):
+        """Process a specific category of products and save to output file"""
         
-        # Step 2: Load Temu template file
-        print("Loading Temu template...")
-        temu_df = pd.read_excel(temu_template_file, sheet_name='Template', header=1)
+        print(f"Processing {category_name} category ({len(product_data)} products)...")
         
-        # Step 3: Validate mappings
-        print("Validating column mappings...")
-        missing_faire_columns = []
-        missing_temu_columns = []
+        # Copy the template file to output
+        shutil.copy2(template_file, output_file)
         
-        for faire_col, temu_col in COLUMN_MAPPINGS.items():
-            if faire_col not in faire_df.columns:
-                missing_faire_columns.append(faire_col)
-            if temu_col not in temu_df.columns:
-                missing_temu_columns.append(temu_col)
-        
-        if missing_faire_columns:
-            print(f"Warning: Missing Faire columns: {missing_faire_columns}")
-        if missing_temu_columns:
-            print(f"Warning: Missing Temu columns: {missing_temu_columns}")
-        
-        # Step 4: Copy the template file to output
-        print("Copying template file...")
-        shutil.copy2(temu_template_file, output_file)
-        
-        # Step 5: Load the copied workbook and modify it
+        # Load the copied workbook and modify it
         workbook = load_workbook(output_file)
         template_sheet = workbook['Template']
         
-        # Step 6: Process each mapping
-        print("Processing column mappings...")
+        # Convert product_data back to DataFrame for easier processing
+        category_df = pd.DataFrame(product_data)
         
         # Find all columns named 'Quantity' in the template
         quantity_col_indices = []
@@ -216,12 +221,13 @@ def copy_mapped_data():
             if str(cell.value) == 'Size':
                 size_col_idx = col_idx
         
+        # Process each mapping
         for faire_col, temu_col in COLUMN_MAPPINGS.items():
-            if faire_col in faire_df.columns and temu_col in temu_df.columns:
+            if faire_col in category_df.columns:
                 print(f"  Mapping: {faire_col} -> {temu_col}")
                 
-                # Get source data (row 4 onwards, skip rows 1-3)
-                source_data = faire_df.iloc[3:][faire_col].tolist()
+                # Get source data
+                source_data = category_df[faire_col].tolist()
                 
                 # Find the column index in Temu template
                 temu_col_idx = None
@@ -261,39 +267,73 @@ def copy_mapped_data():
             else:
                 print(f"  Skipping: {faire_col} -> {temu_col} (column not found)")
         
-        # Step 6c: Conditional logic for Variation Theme and Size
+        # Conditional logic for Variation Theme and Color assignment
         print("Processing conditional Variation Theme logic...")
-        if variation_theme_col_idx is not None and size_col_idx is not None:
+        if variation_theme_col_idx is not None:
+            # Get the Contribution Goods data to detect duplicates
+            contribution_goods_data = []
+            if 'SKU' in category_df.columns:
+                # Transform SKU to Contribution Goods for comparison
+                sku_data = category_df['SKU'].tolist()
+                contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
+            
+            # Find the Color column
+            color_col_idx = None
+            for col_idx, cell in enumerate(template_sheet[2], 1):
+                if str(cell.value) == 'Color':
+                    color_col_idx = col_idx
+                    break
+            
             # Get the Color data that was mapped
             color_data = []
-            if 'Option 1 Value' in faire_df.columns:
-                color_data = faire_df.iloc[3:]['Option 1 Value'].tolist()
+            if 'Option 1 Value' in category_df.columns:
+                color_data = category_df['Option 1 Value'].tolist()
             
-            # Process each row for conditional logic
-            for row_idx, color_value in enumerate(color_data, 5):
-                if pd.isna(color_value) or str(color_value).strip() == '':
-                    # No color value - set Variation Theme to 'Size' and Size to 'One Size'
-                    template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Size')
-                    template_sheet.cell(row=row_idx, column=size_col_idx, value='One Size')
-                else:
-                    # Has color value - Variation Theme stays as 'Color' (already set by mapping)
-                    # Size column remains empty or as set by fixed values
-                    pass
-            
-            print(f"  Applied conditional logic to {len(color_data)} rows")
-            print(f"  - Rows with color: Set Variation Theme = 'Color'")
-            print(f"  - Rows without color: Set Variation Theme = 'Size', Size = 'One Size'")
+            if color_col_idx is not None and contribution_goods_data and color_data:
+                # Count occurrences of each Contribution Goods value
+                goods_count = {}
+                for goods in contribution_goods_data:
+                    goods_count[goods] = goods_count.get(goods, 0) + 1
+                
+                # Process each row for conditional logic
+                goods_occurrence = {}  # Track occurrence count for each goods value
+                
+                for row_idx, (color_value, goods_value) in enumerate(zip(color_data, contribution_goods_data), 5):
+                    if pd.isna(color_value) or str(color_value).strip() == '':
+                        # No color value - determine if this is part of a multi-variant product
+                        if goods_count.get(goods_value, 0) > 1:
+                            # Multiple variants exist - assign sequential color
+                            goods_occurrence[goods_value] = goods_occurrence.get(goods_value, 0) + 1
+                            color_number = goods_occurrence[goods_value]
+                            template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
+                            template_sheet.cell(row=row_idx, column=color_col_idx, value=f'Color {color_number}')
+                        else:
+                            # Single variant - use 'One Color'
+                            template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
+                            template_sheet.cell(row=row_idx, column=color_col_idx, value='One Color')
+                    else:
+                        # Has color value - Variation Theme stays as 'Color' (already set by mapping)
+                        # Color value is already set by the mapping
+                        pass
+                
+                print(f"  Applied conditional logic to {len(color_data)} rows")
+                print(f"  - Rows with color: Set Variation Theme = 'Color' (existing value)")
+                print(f"  - Rows without color: Set Variation Theme = 'Color'")
+                print(f"    - Multi-variant products: Sequential 'Color 1', 'Color 2', etc.")
+                print(f"    - Single products: 'One Color'")
+            else:
+                print("  Warning: Could not find Color column or Contribution Goods data")
         else:
-            print("  Warning: Could not find Variation Theme or Size columns for conditional logic")
+            print("  Warning: Could not find Variation Theme column for conditional logic")
         
-        # After all mappings, calculate pricing strategy
+        # Calculate pricing strategy
         if base_price_col_indices and list_price_col_indices:
             print("Calculating pricing strategy (1x and 1.25x Faire price, floored to X.99)...")
-            num_data_rows = len(faire_df.iloc[3:])
+            num_data_rows = len(category_df)
             
             # Get the original Faire price data
             faire_price_col = 'USD Unit Retail Price'
-            faire_prices = faire_df.iloc[3:][faire_price_col].tolist()
+            faire_prices = category_df[faire_price_col].tolist()
             
             for row_idx in range(5, 5 + num_data_rows):
                 try:
@@ -338,11 +378,11 @@ def copy_mapped_data():
             print(f"  Base Price: 1x Faire price, floored, minus 1 cent")
             print(f"  List Price: 1.25x Faire price, floored, minus 1 cent")
         
-        # Step 6a: Special handling for Contribution Goods (transformed from SKU)
+        # Special handling for Contribution Goods (transformed from SKU)
         print("Processing Contribution Goods transformation...")
-        if 'SKU' in faire_df.columns:
+        if 'SKU' in category_df.columns:
             # Get SKU data
-            sku_data = faire_df.iloc[3:]['SKU'].tolist()
+            sku_data = category_df['SKU'].tolist()
             
             # Transform SKU to Contribution Goods
             contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
@@ -372,12 +412,9 @@ def copy_mapped_data():
         else:
             print("  Warning: 'SKU' column not found in Faire file")
         
-        # Step 6b: Special handling for Image URLs
+        # Special handling for Image URLs
         print("Processing Image URLs...")
-        if 'Option Image' in faire_df.columns or 'Product Images' in faire_df.columns:
-            # Get data from row 4 onwards
-            faire_data = faire_df.iloc[3:]
-            
+        if 'Option Image' in category_df.columns or 'Product Images' in category_df.columns:
             # Find SKU Images URL columns in template
             sku_images_columns = []
             detail_images_columns = []
@@ -397,16 +434,16 @@ def copy_mapped_data():
             product_images_count = 0
             no_image_count = 0
             
-            for row_idx, (_, row_data) in enumerate(faire_data.iterrows(), 5):
+            for row_idx, (_, row_data) in enumerate(category_df.iterrows(), 5):
                 # Determine which image source to use
                 image_urls = []
                 
                 # First try Option Image
-                if 'Option Image' in faire_df.columns and pd.notna(row_data['Option Image']):
+                if 'Option Image' in category_df.columns and pd.notna(row_data['Option Image']):
                     image_urls = [str(row_data['Option Image']).strip()]
                     option_image_count += 1
                 # Fallback to Product Images
-                elif 'Product Images' in faire_df.columns and pd.notna(row_data['Product Images']):
+                elif 'Product Images' in category_df.columns and pd.notna(row_data['Product Images']):
                     image_urls = split_image_urls(row_data['Product Images'])
                     product_images_count += 1
                 else:
@@ -422,14 +459,14 @@ def copy_mapped_data():
                     if detail_images_columns and image_urls:
                         template_sheet.cell(row=row_idx, column=detail_images_columns[0], value=image_urls[0])
             
-            print(f"  Processed image URLs for {len(faire_data)} rows")
+            print(f"  Processed image URLs for {len(category_df)} rows")
             print(f"    - Used Option Image: {option_image_count} rows")
             print(f"    - Used Product Images: {product_images_count} rows")
             print(f"    - No image data: {no_image_count} rows")
         else:
             print("  Warning: No image columns found in Faire file")
         
-        # Step 7: Process fixed column values
+        # Process fixed column values
         print("Processing fixed column values...")
         
         for temu_col, fixed_value in FIXED_COLUMN_VALUES.items():
@@ -446,8 +483,8 @@ def copy_mapped_data():
                 print(f"    Warning: Could not find column '{temu_col}' in template")
                 continue
             
-            # Get the number of data rows (same as the mapped data)
-            num_data_rows = len(faire_df.iloc[3:])
+            # Get the number of data rows
+            num_data_rows = len(category_df)
             
             # Write fixed value to all data rows
             for row_idx in range(5, 5 + num_data_rows):
@@ -455,28 +492,123 @@ def copy_mapped_data():
             
             print(f"    Set fixed value for {num_data_rows} rows")
         
-        # Step 8: Save the workbook
+        # Save the workbook
         workbook.save(output_file)
         workbook.close()
         
-        print(f"\nSuccess! Output saved to: {output_file}")
-        print(f"Processed {len(COLUMN_MAPPINGS)} column mappings")
-        print(f"Set {len(FIXED_COLUMN_VALUES)} fixed values")
+        print(f"Completed processing {category_name} category ({len(category_df)} products)")
+    
+    # ============================================================================
+    # MAIN PROCESSING FUNCTION
+    # ============================================================================
+    
+    try:
+        # File paths
+        faire_file = 'data/faire_products.xlsx'
+        temu_template_file = 'data/temu_template.xlsx'
         
-        # Step 9: Show summary of what was copied
-        print("\nColumn mapping summary:")
-        print("-" * 40)
+        # Define category configurations
+        CATEGORY_CONFIGS = {
+            'handbags': {
+                'prefixes': ['HBG', 'HW', 'HM', 'HL'],
+                'output_file': 'output/temu_template_handbags.xlsx',
+                'description': 'Handbags, Wallets, Cosmetic Bags, Travel Bags'
+            },
+            'other': {
+                'prefixes': [],  # Empty means catch-all for anything not in other categories
+                'output_file': 'output/temu_template_other.xlsx',
+                'description': 'All other products (hats, accessories, etc.)'
+            }
+            # Future categories can be added here:
+            # 'hats': {
+            #     'prefixes': ['CAP', 'HAT'],
+            #     'output_file': 'output/temu_template_hats.xlsx',
+            #     'description': 'Hats and Caps'
+            # },
+            # 'accessories': {
+            #     'prefixes': ['TO-', 'ACC'],
+            #     'output_file': 'output/temu_template_accessories.xlsx',
+            #     'description': 'Accessories and Straps'
+            # }
+        }
+        
+        print("Starting enhanced mapping tool...")
+        print(f"Mapping {len(COLUMN_MAPPINGS)} columns")
+        print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
+        print(f"Categories: {list(CATEGORY_CONFIGS.keys())}")
+        
+        # Step 1: Load Faire products file
+        print("Loading Faire products file...")
+        faire_df = pd.read_excel(faire_file, sheet_name='Products')
+        
+        # Step 2: Load Temu template file
+        print("Loading Temu template...")
+        temu_df = pd.read_excel(temu_template_file, sheet_name='Template', header=1)
+        
+        # Step 3: Validate mappings
+        print("Validating column mappings...")
+        missing_faire_columns = []
+        missing_temu_columns = []
+        
         for faire_col, temu_col in COLUMN_MAPPINGS.items():
-            if faire_col in faire_df.columns and temu_col in temu_df.columns:
-                source_count = len(faire_df.iloc[3:][faire_col].dropna())
-                print(f"✓ {faire_col} -> {temu_col} ({source_count} values)")
-            else:
-                print(f"✗ {faire_col} -> {temu_col} (column not found)")
+            if faire_col not in faire_df.columns:
+                missing_faire_columns.append(faire_col)
+            if temu_col not in temu_df.columns:
+                missing_temu_columns.append(temu_col)
         
-        print("\nFixed value summary:")
-        print("-" * 40)
-        for temu_col, fixed_value in FIXED_COLUMN_VALUES.items():
-            print(f"✓ {temu_col} = '{fixed_value}' (all rows)")
+        if missing_faire_columns:
+            print(f"Warning: Missing Faire columns: {missing_faire_columns}")
+        if missing_temu_columns:
+            print(f"Warning: Missing Temu columns: {missing_temu_columns}")
+        
+        # Step 4: Split data into categories
+        print("Splitting data into categories...")
+        
+        # Get data from row 4 onwards (skip header rows)
+        data_df = faire_df.iloc[3:].copy()
+        
+        # Initialize category data containers
+        category_data = {category: [] for category in CATEGORY_CONFIGS.keys()}
+        
+        # Split data based on SKU prefixes
+        for idx, row in data_df.iterrows():
+            sku = str(row['SKU']) if pd.notna(row['SKU']) else ''
+            assigned_category = None
+            
+            # Check each category's prefixes (except 'other' which is catch-all)
+            for category, config in CATEGORY_CONFIGS.items():
+                if category == 'other':
+                    continue  # Skip 'other' for now, it's the catch-all
+                
+                if any(sku.startswith(prefix) for prefix in config['prefixes']):
+                    assigned_category = category
+                    break
+            
+            # If no specific category found, assign to 'other'
+            if assigned_category is None:
+                assigned_category = 'other'
+            
+            category_data[assigned_category].append(row)
+        
+        # Print category breakdown
+        print("Category breakdown:")
+        for category, data in category_data.items():
+            config = CATEGORY_CONFIGS[category]
+            print(f"  {category.title()}: {len(data)} products ({config['description']})")
+        
+        # Process each category
+        for category, data in category_data.items():
+            if len(data) > 0:  # Only process categories with data
+                config = CATEGORY_CONFIGS[category]
+                print(f"\nProcessing {category} products...")
+                process_product_category(data, temu_template_file, config['output_file'], category)
+        
+        print(f"\nSuccess! Output files saved to:")
+        for category, config in CATEGORY_CONFIGS.items():
+            if len(category_data[category]) > 0:
+                print(f"  {category.title()}: {config['output_file']}")
+        
+        return  # Exit early since we're now using separate function
         
     except FileNotFoundError as e:
         print(f"Error: Could not find a file. Please check your file paths. Details: {e}")
