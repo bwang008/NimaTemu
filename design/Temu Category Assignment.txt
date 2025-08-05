@@ -1,0 +1,13 @@
+Enhance the category assignment logic to incorporate the image into the code.
+
+Before you change the code, give me a report of the proposed changes in terms of what logic is going to be employed for each category:
+
+Example:
+
+Category: 30988 
+Logic: If the 'Product Name' column contains a word in ['Cosmetic','Make-Up','Makeup'] and one in ['Case','Bag','Holder'] then assign
+
+Category: 29312
+Logic: If the 'Product Name' column contains a word in ['Eyeglass','Glasses','Sunglasses','Sunglass'] and one in ['Case','Holder','Container'] then assign
+
+I think this logic is going to get a bit large so I would like to organize this code better, should I split this into a separate script/library called 'TemuUtilities.py' or continue to enhance it within the same 'Faire2Temu.py' file?

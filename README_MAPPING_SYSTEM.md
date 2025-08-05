@@ -1,376 +1,281 @@
-# Enhanced Faire to Temu Mapping System
+# Faire2Temu - Enhanced Product Mapping System
 
-This enhanced system allows you to map multiple columns from Faire products to Temu template with configurable fixed values.
+A comprehensive tool for mapping Faire product data to Temu's upload format with intelligent category assignment and modular architecture.
 
-## 🚀 Features
+## 🏗️ **System Architecture**
 
-- **Column Mapping**: Map multiple columns from Faire to Temu
-- **Fixed Values**: Set default values for specific Temu columns
-- **Data Transformations**: Custom data processing for specific columns
-- **Image URL Processing**: Intelligent handling of Option Image and Product Images
-- **Validation**: Automatic checking for missing columns
-- **Detailed Logging**: See exactly what was processed
+The system is now organized into modular components for better maintainability and extensibility:
 
-## 📁 Files
-
-- `Faire2Temu.py` - Main script with enhanced mapping system
-- `test_suite.py` - Comprehensive test suite for all functionality
-- `README_MAPPING_SYSTEM.md` - This documentation file
-
-## ⚙️ Configuration
-
-### 1. Column Mappings
-
-Edit the `COLUMN_MAPPINGS` dictionary in `Faire2Temu.py`:
-
-```python
-COLUMN_MAPPINGS = {
-    # Basic product information
-    'Product Name (English)': 'Product Name',
-    'Description (English)': 'Product Description',
-    'SKU': 'Contribution SKU',
-    'USD Unit Retail Price': 'Base Price - USD',
-    'USD Unit Retail Price': 'List Price - USD',
-    'On Hand Inventory': 'Quantity',
-    'Made In Country': 'Country/Region of Origin',
-    
-    # Option mappings
-    'Option 1 Name': 'Variation Theme',
-    'Option 1 Value': 'Color',
-    
-    # Dimension mappings
-    'Item Weight': 'Weight - lb',
-    'Item Length': 'Length - in',
-    'Item Width': 'Width - in',
-    'Item Height': 'Height - in',
-    
-    # Add more mappings here:
-    'Product Status': 'Status',
-    'Product Images': 'Detail Images URL',
-}
+```
+Faire2Temu/
+├── Faire2Temu.py              # Main orchestrator (717 lines)
+├── category_assigner.py        # Enhanced category logic (300+ lines)
+├── data/
+│   ├── faire_products.xlsx     # Source Faire data
+│   └── temu_template.xlsx      # Temu template
+├── output/
+│   ├── temu_template_handbags.xlsx      # New product uploads
+│   ├── temu_template_other.xlsx         # New product uploads
+│   ├── temu_template_handbags_update.xlsx # Product updates
+│   └── temu_template_other_update.xlsx    # Product updates
+└── README_MAPPING_SYSTEM.md   # This documentation
 ```
 
-### 2. Fixed Column Values
+## 📋 **Module Overview**
 
-Edit the `FIXED_COLUMN_VALUES` dictionary in `Faire2Temu.py`:
+### **1. Faire2Temu.py (Main Orchestrator)**
+- **Purpose**: Coordinates the entire mapping process
+- **Responsibilities**:
+  - Data loading and validation
+  - Column mapping and transformation
+  - File processing and Excel manipulation
+  - Pricing calculations
+  - Category splitting by SKU prefixes
+- **Size**: 717 lines, 33KB
+- **Key Functions**:
+  - `copy_mapped_data()`: Main processing function
+  - `process_product_category()`: Handles individual categories
+  - `transform_*()`: Data transformation functions
 
-```python
-FIXED_COLUMN_VALUES = {
-    'Category': '29153',
-    'Country/Region of Origin': 'China',
-    'Province of Origin': 'Guangdong',
-    'Update or Add': 'Add',
-    'Shipping Template': 'NIMA2',
-    'Size': 'One Size',
-    
-    # Add more fixed values:
-    'Status': 'Active',
-    'Brand': 'Your Brand Name',
-    'Handling Time': '1',
-    'Import Designation': 'General',
-    'Fulfillment Channel': 'FBA',
-}
+### **2. category_assigner.py (Enhanced Category Logic)**
+- **Purpose**: Intelligent category assignment based on product names and image data
+- **Responsibilities**:
+  - Keyword-based category matching
+  - Support for 18+ category types
+  - Image data analysis (future enhancement)
+  - Category information lookup
+- **Size**: 300+ lines
+- **Key Features**:
+  - 18 different category rules with AND/OR logic
+  - Case-insensitive keyword matching
+  - Priority-based matching (first match wins)
+  - Extensible rule system
+
+## 🔧 **How It Works**
+
+### **Data Flow:**
+1. **Load Data**: Read Faire products and Temu template
+2. **Split by Category**: Group products by SKU prefixes (handbags vs other)
+3. **Process Each Category**: Apply mappings and transformations
+4. **Assign Categories**: Use intelligent category assignment
+5. **Generate Files**: Create upload-ready Excel files
+
+### **Category Assignment Process:**
+```
+Product Name → category_assigner.py → Category Code
+"Women's Leather Belt" → Rule Matching → "29264"
+"Pet Carrier for Dogs" → Rule Matching → "2062"
+"Kitchen Utensil Set" → Rule Matching → "9923"
 ```
 
-### 3. Data Transformations
+### **Available Categories:**
+- **2062**: Pet Supplies / Small Animals / Carriers
+- **9923**: Home & Kitchen / Kitchen Utensils & Gadgets
+- **11809**: Home & Kitchen / Bath / Towels
+- **19843**: Beauty & Personal Care / Nail Tools
+- **24380**: Cell Phones & Accessories / Cases
+- **29264**: Women / Accessories / Belts
+- **29290**: Women / Accessories / Scarves
+- **29312**: Women / Accessories / Eyewear Cases
+- **29324**: Women / Accessories / Wallets
+- **29522**: Women / Jewelry / Brooches
+- **29542**: Women / Jewelry / Necklaces
+- **30988**: Luggage & Travel / Cosmetic Cases
+- **36256**: Sports & Outdoors / Pickleball
+- **39969**: Arts & Crafts / Pen Cases
+- **46208**: Books / Children's Books
+- **29163**: Tote Bags (legacy)
+- **29164**: Backpacks (legacy)
+- **29165**: Wallets (legacy)
 
-Add custom transformation functions in `Faire2Temu.py`:
+## 🚀 **Usage**
 
-```python
-def transform_price(price_value):
-    """Transform price values"""
-    if pd.isna(price_value):
-        return ''
-    return str(price_value).replace('$', '').strip()
-
-def transform_sku_to_goods(sku_value):
-    """Transform SKU to Contribution Goods by removing letter suffix"""
-    # Examples: 'HBG100PN' → 'HBG100', 'HBG200' → 'HBG200'
-    if pd.isna(sku_value):
-        return ''
-    sku_str = str(sku_value).strip()
-    match = re.match(r'^(.+?)([A-Za-z]+)$', sku_str)
-    return match.group(1) if match else sku_str
-
-TRANSFORMATIONS = {
-    'USD Unit Retail Price': transform_price,
-    'Product Name (English)': transform_product_name,
-    'SKU': transform_sku_to_goods,
-}
-```
-
-## 🏃‍♂️ Usage
-
-### Basic Usage
+### **Basic Usage:**
 ```bash
 python Faire2Temu.py
 ```
 
-### View Available Columns
+### **Testing Category Logic:**
 ```bash
-python test_suite.py --test columns
+python category_assigner.py
 ```
 
-### Run All Tests
-```bash
-python test_suite.py --test all
+### **Expected Output:**
 ```
+Starting enhanced mapping tool...
+Mapping 8 columns
+Setting 6 fixed values
+Categories: ['handbags', 'other']
+Enhanced category rules: 18 categories available
 
-### Run Specific Tests
-```bash
-python test_suite.py --test baseline     # Test basic functionality
-python test_suite.py --test fixed        # Test fixed values
-python test_suite.py --test sku          # Test SKU transformation
-python test_suite.py --test mappings     # Test new mappings
-python test_suite.py --test images       # Test image processing
-```
+Loading Faire products file...
+Loading Temu template...
+Validating column mappings...
 
-## 📊 Current Configuration
-
-### Mapped Columns (12 + 1 transformed)
-- ✅ Product Name (English) → Product Name
-- ✅ Description (English) → Product Description  
-- ✅ SKU → Contribution SKU
-- ✅ USD Unit Retail Price → Base Price - USD
-- ✅ USD Unit Retail Price → List Price - USD
-- ✅ On Hand Inventory → Quantity
-- ✅ Made In Country → Country/Region of Origin
-- ✅ Option 1 Name → Variation Theme
-- ✅ Option 1 Value → Color
-- ✅ Item Weight → Weight - lb
-- ✅ Item Length → Length - in
-- ✅ Item Width → Width - in
-- ✅ Item Height → Height - in
-- ✅ SKU → Contribution Goods (with transformation: removes letter suffix)
-
-### Fixed Values (6)
-- ✅ Category = '29153'
-- ✅ Country/Region of Origin = 'China'
-- ✅ Province of Origin = 'Guangdong'
-- ✅ Update or Add = 'Add'
-- ✅ Shipping Template = 'NIMA2'
-- ✅ Size = 'One Size'
-
-## 📈 Results
-
-- **5,669 products** processed successfully
-- **12 column mappings** applied + **1 SKU transformation**
-- **Image URL processing** for 5,669 rows
-- **6 fixed values** set for all rows
-- **Output file**: `output/temu_upload_generated_with_fixed_values.xlsx`
-
-## 🔧 Adding More Mappings
-
-1. **Open `Faire2Temu.py`**
-2. **Find the `COLUMN_MAPPINGS` dictionary**
-3. **Add new mappings**:
-   ```python
-   'Faire Column Name': 'Temu Column Name',
-   ```
-4. **Run the script**: `python Faire2Temu.py`
-
-## 🔧 Adding More Fixed Values
-
-1. **Open `Faire2Temu.py`**
-2. **Find the `FIXED_COLUMN_VALUES` dictionary**
-3. **Add new fixed values**:
-   ```python
-   'Temu Column Name': 'Fixed Value',
-   ```
-4. **Run the script**: `python Faire2Temu.py`
-
-## 📋 Example Additions
-
-### More Column Mappings
-```python
-COLUMN_MAPPINGS = {
-    # ... existing mappings ...
-    'Product Status': 'Status',
-    'Item Weight': 'Weight - lb',
-    'Item Length': 'Length - in',
-    'Item Width': 'Width - in',
-    'Item Height': 'Height - in',
-    'Product Images': 'Detail Images URL',
-    'Option 1 Name': 'Color',
-    'Option 1 Value': 'Color Value',
-    'Option 2 Name': 'Size',
-    'Option 2 Value': 'Size Value',
-}
-```
-
-### More Fixed Values
-```python
-FIXED_COLUMN_VALUES = {
-    # ... existing fixed values ...
-    'Status': 'Active',
-    'Brand': 'Your Brand Name',
-    'Shipping Template': 'Standard',
-    'Handling Time': '1',
-    'Import Designation': 'General',
-    'Fulfillment Channel': 'FBA',
-}
-```
-
-## 🎯 Benefits
-
-- **Easy Configuration**: Simple dictionary-based mapping
-- **Flexible**: Add/remove mappings without code changes
-- **Reliable**: Validation and error handling
-- **Transparent**: Detailed logging of all operations
-- **Extensible**: Easy to add new features
-
-## 📝 Notes
-
-- Fixed values override mapped values for the same column
-- All data is copied from row 4 onwards (skipping rows 1-3)
-- Template structure and formatting are preserved
-- Output file includes both mapped and fixed values
-- **Image Processing Logic**:
-  - Priority: Option Image → Product Images (fallback)
-  - Product Images are split by whitespace/newlines
-  - First URL assigned to SKU Images URL and Detail Images URL
-  - Multiple URLs distributed across SKU Images URL columns
-
-## 👜 Bag/Handbag Product Prefixes
-
-Based on analysis of the Faire products file, the following SKU prefixes are associated with bag/handbag products:
-
-### Major Bag Prefixes (100+ products):
-- **HBG104**: 1,385 products - Handbags, Crossbody Bags
-- **HBG103**: 550 products - Tote Handbags  
-- **HBG105**: 481 products - Clutch Handbags
-
-### Hat/Cap Prefixes (50+ products):
-- **CAP006**: 144 products - Baseball Caps, Fedora Hats
-- **CAP005**: 60 products - Baseball Caps, Fedora Hats
-
-### Bag Strap/Accessory Prefixes:
-- **TO-407**: 63 products - Chain Belt Accessories
-- **TO-406**: 53 products - Handbag Straps
-- **TO-405**: 49 products - Handbag Straps
-
-### Wallet/Purse Prefixes:
-- **HW0080**: 31 products - Fashion Wallets
-- **HW0083**: 20 products - Coin Purses
-- **HW0084**: 20 products - Coin Purses
-- **HW0076**: 18 products - Wristlet Wallets
-- **HW0085**: 17 products - Small Wallets
-- **HW0074**: 11 products - Ladies Wallets
-- **HW0082**: 11 products - Zip Around Wallets
-
-### Cosmetic Bag Prefixes:
-- **HM0059**: 31 products - Cosmetic Pouches
-- **HM0054**: 20 products - Cosmetic Bags
-- **HM0056**: 17 products - Wristlet Handbags
-- **HM0052**: 15 products - Travel Cosmetic Pouches
-- **HM0060**: 13 products - Cosmetic Bag Sets
-
-### Travel/Duffle Bag Prefixes:
-- **HL0042**: 20 products - Duffle Bags, Weekender Bags
-- **HL0049**: 14 products - Duffle Bags
-- **HL0050**: 12 products - Shopping Cart Bags
-- **HL0043**: 8 products - Duffle Bags
-- **HL0044**: 8 products - Duffle Bags
-
-### Card Holder Prefixes:
-- **GCH148**: 18 products - Card Holders
-- **GCH147**: 8 products - Card Holders
-
-### Coin Purse Prefixes:
-- **HD0038**: 17 products - Coin Bags
-- **HD0055**: 10 products - Beaded Coin Purses
-- **HD0056**: 10 products - Beaded Coin Purses
-- **HD0039**: 10 products - Coin Purses
-- **HD0051**: 10 products - Beaded Coin Purses
-- **HD0054**: 10 products - Beaded Coin Purses
-- **HD0053**: 10 products - Beaded Coin Purses
-- **HD0049**: 10 products - Beaded Coin Purses
-- **HD0050**: 10 products - Beaded Coin Purses
-
-### Crossbody Bag Prefixes:
-- **HX0036**: 10 products - Cross Body Bags
-
-### Fanny Pack Prefixes:
-- **BT0188**: 10 products - Fanny Packs
-- **BT0198**: 9 products - Waist Handbags
-
-### Wristlet Prefixes:
-- **GK1774**: 12 products - Wristlet Coin Purses
-- **GK2124**: 9 products - Wristlet Card Holders
-
-### Total Summary:
-- **198 bag-related prefixes** identified
-- **716 other prefixes** (non-bag products)
-- **914 total unique SKU prefixes** in the dataset
-
-This information can be used for filtering products by category or for targeted processing of specific product types.
-
-## 🎯 Flexible Category System
-
-The script now supports automatic splitting of products into multiple categories based on SKU prefixes. This allows you to create separate upload files for different product types.
-
-### Current Categories:
-- **handbags**: HBG, HW, HM, HL prefixes (2,870 products)
-- **other**: Catch-all for remaining products (2,799 products)
-
-### Adding New Categories:
-
-#### Method 1: Modify CATEGORY_CONFIGS in the script
-```python
-CATEGORY_CONFIGS = {
-    'handbags': {
-        'prefixes': ['HBG', 'HW', 'HM', 'HL'],
-        'output_file': 'output/temu_template_handbags.xlsx',
-        'description': 'Handbags, Wallets, Cosmetic Bags, Travel Bags'
-    },
-    'hats': {
-        'prefixes': ['CAP', 'HAT'],
-        'output_file': 'output/temu_template_hats.xlsx',
-        'description': 'Hats and Caps'
-    },
-    'accessories': {
-        'prefixes': ['TO-', 'ACC'],
-        'output_file': 'output/temu_template_accessories.xlsx',
-        'description': 'Accessories and Straps'
-    },
-    'other': {
-        'prefixes': [],  # Empty = catch-all
-        'output_file': 'output/temu_template_other.xlsx',
-        'description': 'All other products'
-    }
-}
-```
-
-#### Method 2: Use the helper function
-```python
-from Faire2Temu import add_category_config, copy_mapped_data
-
-# Add new categories
-add_category_config('hats', ['CAP', 'HAT'], 'output/temu_template_hats.xlsx', 'Hats and Caps')
-add_category_config('accessories', ['TO-', 'ACC'], 'output/temu_template_accessories.xlsx', 'Accessories')
-
-# Run processing
-copy_mapped_data()
-```
-
-### Benefits:
-- **Automatic categorization** based on SKU prefixes
-- **Separate processing** for each category with full functionality
-- **Easy to extend** - just add new category configurations
-- **Clean separation** - no overlap between files
-- **Maintains all features** - color assignment, pricing, image processing, etc.
-
-### Example Output:
-```
 Category breakdown:
-  Handbags: 2870 products (Handbags, Wallets, Cosmetic Bags, Travel Bags)
-  Hats: 204 products (Hats, Caps, and Headwear)
-  Accessories: 156 products (Accessories, Straps, and Small Items)
-  Other: 2439 products (All other products)
+  Handbags: 150 products (Handbags, Wallets, Cosmetic Bags, Travel Bags)
+  Other: 75 products (All other products)
+
+Processing handbags products...
+  Mapping: Product Name (English) -> Product Name
+  Mapping: Description (English) -> Product Description
+  ...
+  Applying enhanced category assignment...
+  Category assignments:
+    29264 (Women / Accessories / Belts): 25 products
+    29324 (Women / Accessories / Wallets): 30 products
+    29153 (Default): 95 products
 
 Success! Output files saved to:
   Handbags: output/temu_template_handbags.xlsx
-  Hats: output/temu_template_hats.xlsx
-  Accessories: output/temu_template_accessories.xlsx
   Other: output/temu_template_other.xlsx
-``` 
+```
+
+## 📁 **File Types Generated**
+
+### **New Product Upload Files:**
+- `temu_template_handbags.xlsx`: Handbags, wallets, cosmetic bags
+- `temu_template_other.xlsx`: All other products
+
+### **Product Update Files:**
+- `temu_template_handbags_update.xlsx`: Update version (no pricing/quantity)
+- `temu_template_other_update.xlsx`: Update version (no pricing/quantity)
+
+## 🔧 **Configuration**
+
+### **Column Mappings** (in Faire2Temu.py):
+```python
+COLUMN_MAPPINGS = {
+    'Product Name (English)': 'Product Name',
+    'Description (English)': 'Product Description',
+    'SKU': 'Contribution SKU',
+    'On Hand Inventory': 'Quantity',
+    # ... more mappings
+}
+```
+
+### **Fixed Values** (in Faire2Temu.py):
+```python
+FIXED_COLUMN_VALUES = {
+    'Category': '29153',  # Default, overridden by category assigner
+    'Country/Region of Origin': 'Mainland China',
+    'Province of Origin': 'Guangdong',
+    'Update or Add': 'Add',
+    'Shipping Template': 'NIMA2',
+}
+```
+
+### **Category Rules** (in category_assigner.py):
+```python
+{
+    'category_code': '29264',
+    'description': 'Women / Accessories / Belts',
+    'condition': lambda name, img: (
+        any(word in name for word in ['women', 'female', 'ladies']) and
+        any(word in name for word in ['belt', 'waistband', 'strap'])
+    )
+}
+```
+
+## 🧪 **Testing**
+
+### **Category Logic Testing:**
+```bash
+python category_assigner.py
+```
+Expected output:
+```
+Testing Category Assigner:
+==================================================
+✅ Women's Leather Belt -> 29264 (expected: 29264)
+✅ Pet Carrier for Dogs -> 2062 (expected: 2062)
+✅ Kitchen Utensil Set -> 9923 (expected: 9923)
+...
+```
+
+### **Integration Testing:**
+```bash
+python Faire2Temu.py
+```
+
+## 🔄 **Update Process**
+
+To create update files (for existing products):
+1. Run `Faire2Temu.py` to generate base files
+2. Run `create_update_files.py` to create `_update.xlsx` versions
+3. Update files have:
+   - "Update" instead of "Add"
+   - Blank Quantity columns
+   - Blank Base Price columns
+   - Blank List Price columns
+
+## 📈 **Benefits of Modular Architecture**
+
+### **Maintainability:**
+- ✅ Category logic isolated in separate module
+- ✅ Easy to add new category rules
+- ✅ Clear separation of concerns
+- ✅ Reduced complexity in main file
+
+### **Extensibility:**
+- ✅ Easy to add new category types
+- ✅ Support for image data analysis
+- ✅ Configurable keyword matching
+- ✅ Priority-based rule system
+
+### **Testing:**
+- ✅ Each module can be tested independently
+- ✅ Category logic has built-in test cases
+- ✅ Clear input/output interfaces
+
+### **Documentation:**
+- ✅ Self-documenting code structure
+- ✅ Clear module responsibilities
+- ✅ Comprehensive README
+
+## 🛠️ **Troubleshooting**
+
+### **Common Issues:**
+
+1. **Missing Files:**
+   ```
+   Error: Could not find a file. Please check your file paths.
+   ```
+   - Ensure `data/faire_products.xlsx` exists
+   - Ensure `data/temu_template.xlsx` exists
+
+2. **Category Assignment Issues:**
+   - Check category rules in `category_assigner.py`
+   - Test with `python category_assigner.py`
+   - Verify product names contain expected keywords
+
+3. **Excel Processing Errors:**
+   - Ensure Excel files are not open in other applications
+   - Check file permissions
+   - Verify template structure matches expected format
+
+### **Debugging:**
+- Enable verbose output in `Faire2Temu.py`
+- Test individual modules separately
+- Check category assignments in output logs
+
+## 🔮 **Future Enhancements**
+
+### **Planned Features:**
+- Image data analysis for category assignment
+- Machine learning-based category prediction
+- Support for more Temu categories
+- Batch processing for large datasets
+- Web interface for configuration
+
+### **Extensibility Points:**
+- Add new category rules in `category_assigner.py`
+- Modify column mappings in `Faire2Temu.py`
+- Add new transformation functions
+- Create additional output formats
+
+---
+
+**Last Updated**: December 2024
+**Version**: 2.0 (Modular Architecture)
+**Maintainer**: NimaTemu Development Team 

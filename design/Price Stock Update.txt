@@ -1,0 +1,9 @@
+I want to create a process that will take the input file in the data/price folder called 'PRICES.XLS' 
+
+On row 6 of 'Sheet1', reference column A's column name, 'Item #' to get the product SKU. 
+
+For column Z, 'On-hand Qty' to get the product stock/inventory
+
+For column AC, 'Sale Price' to get the product price.
+
+Using this file as a source of truth and the product SKU as a matching key, update the product price and inventory.

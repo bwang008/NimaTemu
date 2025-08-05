@@ -93,40 +93,12 @@ def copy_mapped_data():
     }
     
     # ============================================================================
-    # CONDITIONAL CATEGORY ASSIGNMENT
+    # CATEGORY ASSIGNMENT (MODULAR)
     # ============================================================================
-    # Configure conditional category assignments based on product name content.
-    # This allows you to assign different category codes based on keywords in product names.
-    # The system will check each condition in order and use the first match.
-    
-    CONDITIONAL_CATEGORIES = [
-        {
-            'condition': lambda product_name: 'tote' in str(product_name).lower(),
-            'category_code': '29163',
-            'description': 'Tote bags and totes'
-        },
-        {
-            'condition': lambda product_name: 'backpack' in str(product_name).lower(),
-            'category_code': '29164',
-            'description': 'Backpacks'
-        },
-        {
-            'condition': lambda product_name: 'wallet' in str(product_name).lower(),
-            'category_code': '29165',
-            'description': 'Wallets'
-        },
-        # Add more conditions as needed:
-        # {
-        #     'condition': lambda product_name: 'crossbody' in str(product_name).lower(),
-        #     'category_code': '29166',
-        #     'description': 'Crossbody bags'
-        # },
-        # {
-        #     'condition': lambda product_name: 'clutch' in str(product_name).lower(),
-        #     'category_code': '29167',
-        #     'description': 'Clutch bags'
-        # },
-    ]
+    # Category assignment is now handled by the separate category_assigner.py module.
+    # This provides enhanced category logic with support for image data analysis.
+    # Import the category assigner
+    from category_assigner import CategoryAssigner
     
     # ============================================================================
     # DATA TRANSFORMATION FUNCTIONS (optional)
@@ -214,15 +186,22 @@ def copy_mapped_data():
         }
         print(f"Added category: {category_name} with prefixes {prefixes}")
     
-    def determine_category_code(product_name, default_category='29153'):
+    def determine_category_code(product_name, image_data=None, default_category='29153'):
         """
-        Determine the category code based on product name content.
+        Determine the category code based on product name and image data.
         Returns the category code for the first matching condition, or default if no match.
+        
+        Args:
+            product_name: The product name to analyze
+            image_data: Optional image data (URLs, descriptions) to analyze
+            default_category: Default category if no match is found
+            
+        Returns:
+            str: The category code for the product
         """
-        for condition_config in CONDITIONAL_CATEGORIES:
-            if condition_config['condition'](product_name):
-                return condition_config['category_code']
-        return default_category
+        # Use the modular category assigner
+        category_assigner = CategoryAssigner()
+        return category_assigner.determine_category(product_name, image_data)
     
     # ============================================================================
     # PROCESSING FUNCTION FOR EACH CATEGORY
@@ -532,20 +511,26 @@ def copy_mapped_data():
             # Get the number of data rows
             num_data_rows = len(category_df)
             
-            # Special handling for Category column with conditional assignment
+            # Special handling for Category column with enhanced assignment
             if temu_col == 'Category':
-                print("    Applying conditional category assignment...")
+                print("    Applying enhanced category assignment...")
                 category_assignments = {}
                 
-                # Get product names for conditional category assignment
+                # Get product names and image data for category assignment
                 product_names = []
+                image_data = []
                 if 'Product Name (English)' in category_df.columns:
                     product_names = category_df['Product Name (English)'].tolist()
+                if 'Product Images' in category_df.columns:
+                    image_data = category_df['Product Images'].tolist()
                 
-                # Process each row with conditional category assignment
+                # Process each row with enhanced category assignment
                 for row_idx in range(5, 5 + num_data_rows):
                     product_name = product_names[row_idx - 5] if row_idx - 5 < len(product_names) else ''
-                    category_code = determine_category_code(product_name, fixed_value)
+                    img_data = image_data[row_idx - 5] if row_idx - 5 < len(image_data) else None
+                    
+                    # Use the enhanced category assigner
+                    category_code = category_assigner.determine_category(product_name, img_data)
                     
                     # Track category assignments for reporting
                     if category_code not in category_assignments:
@@ -554,10 +539,12 @@ def copy_mapped_data():
                     
                     template_sheet.cell(row=row_idx, column=temu_col_idx, value=category_code)
                 
-                # Report category assignments
+                # Report category assignments with descriptions
                 print(f"    Category assignments:")
                 for category_code, count in category_assignments.items():
-                    print(f"      {category_code}: {count} products")
+                    category_info = category_assigner.get_category_info(category_code)
+                    description = category_info['description'] if category_info else 'Unknown'
+                    print(f"      {category_code} ({description}): {count} products")
             else:
                 # Write fixed value to all data rows for non-category columns
                 for row_idx in range(5, 5 + num_data_rows):
@@ -609,7 +596,10 @@ def copy_mapped_data():
         print(f"Mapping {len(COLUMN_MAPPINGS)} columns")
         print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
         print(f"Categories: {list(CATEGORY_CONFIGS.keys())}")
-        print(f"Conditional category rules: {len(CONDITIONAL_CATEGORIES)}")
+        
+        # Initialize category assigner
+        category_assigner = CategoryAssigner()
+        print(f"Enhanced category rules: {len(category_assigner.category_rules)} categories available")
         
         # Step 1: Load Faire products file
         print("Loading Faire products file...")
