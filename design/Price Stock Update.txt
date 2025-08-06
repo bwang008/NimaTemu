@@ -7,3 +7,24 @@ For column Z, 'On-hand Qty' to get the product stock/inventory
 For column AC, 'Sale Price' to get the product price.
 
 Using this file as a source of truth and the product SKU as a matching key, update the product price and inventory.
+
+I would like this process to be called while Faire2Temu.py is being run, so when you take a SKU from the faire_products.xlsx file, in addition to moving it to the temu_template.xlsx file, I want the SKU to also be written to a copy of 2 files in the data folder called 'temu_price_template.xlsx' for the price data, and 'temu_stock_template'xlsx' for the inventory data.
+
+In 'temu_price_template.xlsx':
+
+Row 1 contains the column names.
+
+In the 'SKU ID' column A, place the SKU value from the faire_products.xlsx file
+In the 'Current base price' column B, place the 'Base Price - USD' column value
+in the 'New base price' column C, place the 'Sale Price' value from the 'PRICES.XLS' file with the matching SKU value (So column A in the temu_price_template.xlsx file and the 'Item #' column in the 'PRICES.XLS' should match to pull the record, otherwise if no record is found leave it as a copy of 'Base Price - USD' 
+
+Save this copy as 'temu_price_update.xsx' in the output folder.
+
+In 'temu_stock_template.xlsx':
+
+In the 'SKU' place the SKU from the faire_products.xlsx file 
+Leave 'SKU ID' blank
+in '*New quantity' or column C, put the inventory from the matching SKU in 'PRICES.XLS' 
+If there is no matching SKU, then put the value as 0.
+
+Save the copy as 'temu_stock_update.xlsx' in the output folder. 

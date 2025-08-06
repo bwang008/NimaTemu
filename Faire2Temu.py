@@ -5,6 +5,10 @@ import warnings
 import re
 import argparse
 import sys
+import math
+
+# Import the PriceStockUpdater
+from price_stock_updater import PriceStockUpdater
 
 # Suppress openpyxl warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
@@ -26,6 +30,9 @@ def copy_mapped_data(filter_stock=True):
         copy_mapped_data()
     
     The 'other' category is always the catch-all for products not matching any specific prefixes.
+    
+    CHUNKING:
+    All output files are now split into chunks of 1000 records each to comply with Temu's requirements.
     
     Args:
         filter_stock (bool): If True, only process products with stock > 0. Default is True.
@@ -98,92 +105,86 @@ def copy_mapped_data(filter_stock=True):
     }
     
     # ============================================================================
-    # CATEGORY ASSIGNMENT (MODULAR)
+    # DATA TRANSFORMATION FUNCTIONS
     # ============================================================================
-    # Category assignment is now handled by the separate category_assigner.py module.
-    # This provides enhanced category logic with support for image data analysis.
-    # Import the category assigner
-    from category_assigner import CategoryAssigner
-    
-    # ============================================================================
-    # DATA TRANSFORMATION FUNCTIONS (optional)
-    # ============================================================================
-    # Add custom transformation functions for specific columns if needed
     
     def transform_price(price_value):
-        """Transform price values (remove $, convert to string, etc.)"""
-        if pd.isna(price_value):
+        """Transform price values to ensure they are numeric"""
+        if pd.isna(price_value) or price_value == '':
             return ''
-        return str(price_value).replace('$', '').strip()
+        try:
+            return float(price_value)
+        except (ValueError, TypeError):
+            return ''
     
     def transform_product_name(name):
-        """Transform product names (remove extra whitespace, etc.)"""
-        if pd.isna(name):
+        """Transform product names to ensure they are strings"""
+        if pd.isna(name) or name == '':
             return ''
         return str(name).strip()
     
     def transform_sku_to_goods(sku_value):
-        """
-        Transform SKU to Contribution Goods by removing non-numeric suffix.
-        Examples:
-        - 'HBG100PN' → 'HBG100'
-        - 'HBG200' → 'HBG200' (no suffix to remove)
-        - 'ABC123XY' → 'ABC123'
-        """
-        if pd.isna(sku_value):
+        """Transform SKU to Contribution Goods by removing non-numeric suffixes"""
+        if pd.isna(sku_value) or sku_value == '':
             return ''
         
         sku_str = str(sku_value).strip()
         
-        # Use regex to find the pattern: letters/numbers followed by letters at the end
-        # This will match patterns like 'HBG100PN', 'ABC123XY', etc.
-        match = re.match(r'^(.+?)([A-Za-z]+)$', sku_str)
+        # Remove common non-numeric suffixes (2-3 letters at the end)
+        # This handles cases like 'HBG104955BL' -> 'HBG104955'
+        if len(sku_str) > 3:
+            # Check if the last 2-3 characters are letters
+            suffix = sku_str[-3:] if len(sku_str) >= 3 else sku_str[-2:]
+            if suffix.isalpha() and len(suffix) >= 2:
+                # Remove the suffix
+                base_sku = sku_str[:-len(suffix)]
+                return base_sku
         
-        if match:
-            # If there's a letter suffix, remove it
-            base_part = match.group(1)
-            return base_part
-        else:
-            # If no letter suffix found, return the original SKU
-            return sku_str
+        return sku_str
     
     def split_image_urls(image_urls_str):
-        """
-        Split image URLs that are separated by whitespace or newlines.
-        Returns a list of individual URLs.
-        """
-        if pd.isna(image_urls_str) or str(image_urls_str).strip() == '':
-            return []
+        """Split image URLs and return the first one"""
+        if pd.isna(image_urls_str) or image_urls_str == '':
+            return ''
         
-        # Split by whitespace and newlines, then filter out empty strings
-        urls = re.split(r'[\s\n]+', str(image_urls_str).strip())
-        return [url.strip() for url in urls if url.strip()]
+        # Convert to string and split by common delimiters
+        urls_str = str(image_urls_str)
+        
+        # Split by common delimiters (comma, semicolon, pipe, newline)
+        delimiters = [',', ';', '|', '\n', '\r\n']
+        for delimiter in delimiters:
+            if delimiter in urls_str:
+                urls = urls_str.split(delimiter)
+                # Return the first non-empty URL
+                for url in urls:
+                    url_clean = url.strip()
+                    if url_clean and url_clean != '':
+                        return url_clean
+                return ''
+        
+        # If no delimiters found, return the whole string
+        return urls_str.strip()
     
-    # Define transformation functions for specific columns
+    # ============================================================================
+    # TRANSFORMATIONS DICTIONARY
+    # ============================================================================
+    # Map column names to their transformation functions
+    
     TRANSFORMATIONS = {
-        'USD Unit Retail Price': transform_price,
         'Product Name (English)': transform_product_name,
         'Description (English)': transform_product_name,
-        # Note: SKU transformation is handled separately for Contribution Goods only
-        # 'SKU': transform_sku_to_goods,  # REMOVED - this was causing the bug
+        'USD Unit Retail Price': transform_price,
     }
     
     # ============================================================================
-    # HELPER FUNCTIONS
+    # CATEGORY ASSIGNMENT SYSTEM
     # ============================================================================
     
     def add_category_config(category_name, prefixes, output_file, description):
-        """
-        Helper function to add new category configurations.
-        This can be called before running the main function to add new categories.
-        
-        Example:
-            add_category_config('hats', ['CAP', 'HAT'], 'output/temu_template_hats.xlsx', 'Hats and Caps')
-        """
+        """Add a new category configuration"""
         global CATEGORY_CONFIGS
         if 'CATEGORY_CONFIGS' not in globals():
             CATEGORY_CONFIGS = {}
-        
         CATEGORY_CONFIGS[category_name] = {
             'prefixes': prefixes,
             'output_file': output_file,
@@ -191,73 +192,374 @@ def copy_mapped_data(filter_stock=True):
         }
         print(f"Added category: {category_name} with prefixes {prefixes}")
     
-    def determine_category_code(product_name, image_data=None, default_category='29153'):
-        """
-        Determine the category code based on product name and image data.
-        Returns the category code for the first matching condition, or default if no match.
+    class CategoryAssigner:
+        """Enhanced category assignment system"""
         
-        Args:
-            product_name: The product name to analyze
-            image_data: Optional image data (URLs, descriptions) to analyze
-            default_category: Default category if no match is found
+        def __init__(self):
+            self.category_rules = {
+                '29153': {
+                    'description': 'Unknown',
+                    'keywords': []
+                },
+                '2062': {
+                    'description': 'Pet Supplies / Small Animals / Carriers',
+                    'keywords': ['pet', 'dog', 'cat', 'animal', 'carrier', 'leash', 'collar']
+                },
+                '29312': {
+                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Sunglasses & Eyewear',
+                    'keywords': ['sunglasses', 'eyewear', 'glasses', 'optical', 'vision']
+                },
+                '29163': {
+                    'description': 'Tote bags and totes',
+                    'keywords': ['tote', 'bag', 'handbag', 'purse', 'clutch', 'wallet']
+                },
+                '30988': {
+                    'description': 'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Cosmetic Cases',
+                    'keywords': ['cosmetic', 'makeup', 'beauty', 'travel', 'case']
+                },
+                '29324': {
+                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Wallets',
+                    'keywords': ['wallet', 'purse', 'clutch', 'coin', 'card']
+                },
+                '29264': {
+                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Belts',
+                    'keywords': ['belt', 'waist', 'accessory']
+                },
+                '29164': {
+                    'description': 'Backpacks',
+                    'keywords': ['backpack', 'school', 'laptop', 'travel']
+                },
+                '24380': {
+                    'description': 'Cell Phones & Accessories / Cases, Holsters & Sleeves',
+                    'keywords': ['phone', 'mobile', 'case', 'protector', 'cover']
+                },
+                '29542': {
+                    'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Necklaces',
+                    'keywords': ['necklace', 'jewelry', 'pendant', 'chain']
+                },
+                '36256': {
+                    'description': 'Sports & Outdoors / Sports / Leisure Sports / Pickleball / Paddles',
+                    'keywords': ['pickleball', 'paddle', 'sport', 'game']
+                },
+                '19843': {
+                    'description': 'Beauty & Personal Care / Foot, Hand & Nail Care / Tools & Accessories',
+                    'keywords': ['nail', 'beauty', 'care', 'tool']
+                },
+                '29522': {
+                    'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Brooches & Pins',
+                    'keywords': ['brooch', 'pin', 'jewelry', 'accessory']
+                }
+            }
+        
+        def determine_category(self, product_name, image_data=None):
+            """Determine the best category based on product name and image data"""
+            if not product_name:
+                return '29153'  # Default category
             
-        Returns:
-            str: The category code for the product
-        """
-        # Use the modular category assigner
-        category_assigner = CategoryAssigner()
-        return category_assigner.determine_category(product_name, image_data)
+            product_name_lower = product_name.lower()
+            
+            # Check each category's keywords
+            for category_code, rule in self.category_rules.items():
+                for keyword in rule['keywords']:
+                    if keyword.lower() in product_name_lower:
+                        return category_code
+            
+            return '29153'  # Default if no match found
+        
+        def get_category_info(self, category_code):
+            """Get category information by code"""
+            return self.category_rules.get(category_code, None)
+    
+    # ============================================================================
+    # UTILITY FUNCTIONS
+    # ============================================================================
+    
+    def split_data_into_chunks(data, chunk_size=1000):
+        """Split data into chunks of specified size"""
+        chunks = []
+        for i in range(0, len(data), chunk_size):
+            chunks.append(data[i:i + chunk_size])
+        return chunks
+    
+    def generate_chunk_filename(base_filename, chunk_number):
+        """Generate filename for a specific chunk"""
+        name, ext = base_filename.rsplit('.', 1)
+        return f"{name}_{chunk_number}.{ext}"
     
     # ============================================================================
     # PROCESSING FUNCTION FOR EACH CATEGORY
     # ============================================================================
     
     def process_product_category(product_data, template_file, output_file, category_name):
-        """Process a specific category of products and save to output file"""
+        """Process a specific category of products and save to output file with chunking"""
         
         print(f"Processing {category_name} category ({len(product_data)} products)...")
         
-        # Copy the template file to output
-        shutil.copy2(template_file, output_file)
+        # Split data into chunks of 1000 records
+        data_chunks = split_data_into_chunks(product_data, 1000)
+        print(f"  Split into {len(data_chunks)} chunks of max 1000 records each")
         
-        # Load the copied workbook and modify it
-        workbook = load_workbook(output_file)
-        template_sheet = workbook['Template']
-        
-        # Convert product_data back to DataFrame for easier processing
-        category_df = pd.DataFrame(product_data)
-        
-        # Find all columns named 'Quantity' in the template
-        quantity_col_indices = []
-        for col_idx, cell in enumerate(template_sheet[2], 1):
-            if str(cell.value) == 'Quantity':
-                quantity_col_indices.append(col_idx)
-        
-        # Find all columns named 'Base Price - USD' and 'List Price - USD'
-        base_price_col_indices = []
-        list_price_col_indices = []
-        for col_idx, cell in enumerate(template_sheet[2], 1):
-            if str(cell.value) == 'Base Price - USD':
-                base_price_col_indices.append(col_idx)
-            if str(cell.value) == 'List Price - USD':
-                list_price_col_indices.append(col_idx)
-        
-        # Find Variation Theme and Size columns for conditional logic
-        variation_theme_col_idx = None
-        size_col_idx = None
-        for col_idx, cell in enumerate(template_sheet[2], 1):
-            if str(cell.value) == 'Variation Theme':
-                variation_theme_col_idx = col_idx
-            if str(cell.value) == 'Size':
-                size_col_idx = col_idx
-        
-        # Process each mapping
-        for faire_col, temu_col in COLUMN_MAPPINGS.items():
-            if faire_col in category_df.columns:
-                print(f"  Mapping: {faire_col} -> {temu_col}")
+        # Process each chunk
+        for chunk_idx, chunk_data in enumerate(data_chunks, 1):
+            chunk_filename = generate_chunk_filename(output_file, chunk_idx)
+            print(f"  Processing chunk {chunk_idx}/{len(data_chunks)}: {len(chunk_data)} products -> {chunk_filename}")
+            
+            # Copy the template file to chunk output
+            shutil.copy2(template_file, chunk_filename)
+            
+            # Load the copied workbook and modify it
+            workbook = load_workbook(chunk_filename)
+            template_sheet = workbook['Template']
+            
+            # Convert chunk_data back to DataFrame for easier processing
+            category_df = pd.DataFrame(chunk_data)
+            
+            # Find all columns named 'Quantity' in the template
+            quantity_col_indices = []
+            for col_idx, cell in enumerate(template_sheet[2], 1):
+                if str(cell.value) == 'Quantity':
+                    quantity_col_indices.append(col_idx)
+            
+            # Find all columns named 'Base Price - USD' and 'List Price - USD'
+            base_price_col_indices = []
+            list_price_col_indices = []
+            for col_idx, cell in enumerate(template_sheet[2], 1):
+                if str(cell.value) == 'Base Price - USD':
+                    base_price_col_indices.append(col_idx)
+                if str(cell.value) == 'List Price - USD':
+                    list_price_col_indices.append(col_idx)
+            
+            # Find Variation Theme and Size columns for conditional logic
+            variation_theme_col_idx = None
+            size_col_idx = None
+            for col_idx, cell in enumerate(template_sheet[2], 1):
+                if str(cell.value) == 'Variation Theme':
+                    variation_theme_col_idx = col_idx
+                if str(cell.value) == 'Size':
+                    size_col_idx = col_idx
+            
+            # Process each mapping
+            for faire_col, temu_col in COLUMN_MAPPINGS.items():
+                if faire_col in category_df.columns:
+                    print(f"    Mapping: {faire_col} -> {temu_col}")
+                    
+                    # Get source data
+                    source_data = category_df[faire_col].tolist()
+                    
+                    # Find the column index in Temu template
+                    temu_col_idx = None
+                    for col_idx, cell in enumerate(template_sheet[2], 1):  # Row 2 contains headers
+                        if temu_col in str(cell.value):
+                            temu_col_idx = col_idx
+                            break
+                    
+                    if temu_col_idx is None:
+                        print(f"      Warning: Could not find column '{temu_col}' in template")
+                        continue
+                    
+                    # Apply transformation if defined
+                    if faire_col in TRANSFORMATIONS:
+                        source_data = [TRANSFORMATIONS[faire_col](value) for value in source_data]
+                        print(f"      Applied transformation: {faire_col}")
+                    
+                    # Special handling for Quantity: populate all Quantity columns
+                    if temu_col == 'Quantity' and quantity_col_indices:
+                        for row_idx, value in enumerate(source_data, 5):
+                            # Handle NaN values
+                            cell_value = '' if pd.isna(value) else value
+                            for q_col_idx in quantity_col_indices:
+                                template_sheet.cell(row=row_idx, column=q_col_idx, value=cell_value)
+                        print(f"      Copied {len(source_data)} values to all Quantity columns ({len(quantity_col_indices)})")
+                        continue  # Skip the default single-column write below
+                    
+                    # Write data to template (default: single column)
+                    for row_idx, value in enumerate(source_data, 5):
+                        # Handle NaN values
+                        if pd.isna(value):
+                            template_sheet.cell(row=row_idx, column=temu_col_idx, value='')
+                        else:
+                            template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
+                    
+                    print(f"      Copied {len(source_data)} values")
+                else:
+                    print(f"    Skipping: {faire_col} -> {temu_col} (column not found)")
+            
+            # Conditional logic for Variation Theme and Color assignment
+            print("    Processing conditional Variation Theme logic...")
+            if variation_theme_col_idx is not None:
+                # Get the Contribution Goods data to detect duplicates
+                contribution_goods_data = []
+                if 'SKU' in category_df.columns:
+                    # Transform SKU to Contribution Goods for comparison
+                    sku_data = category_df['SKU'].tolist()
+                    contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
                 
-                # Get source data
-                source_data = category_df[faire_col].tolist()
+                # Find the Color column
+                color_col_idx = None
+                for col_idx, cell in enumerate(template_sheet[2], 1):
+                    if str(cell.value) == 'Color':
+                        color_col_idx = col_idx
+                        break
+                
+                # Get the Color data that was mapped
+                color_data = []
+                if 'Option 1 Value' in category_df.columns:
+                    color_data = category_df['Option 1 Value'].tolist()
+                
+                if color_col_idx is not None and contribution_goods_data and color_data:
+                    # Count occurrences of each Contribution Goods value
+                    goods_count = {}
+                    for goods in contribution_goods_data:
+                        goods_count[goods] = goods_count.get(goods, 0) + 1
+                    
+                    # Process each row for conditional logic
+                    goods_occurrence = {}  # Track occurrence count for each goods value
+                    
+                    for row_idx, (color_value, goods_value) in enumerate(zip(color_data, contribution_goods_data), 5):
+                        if pd.isna(color_value) or str(color_value).strip() == '':
+                            # No color value - determine if this is part of a multi-variant product
+                            if goods_count.get(goods_value, 0) > 1:
+                                # Multiple variants exist - assign sequential color
+                                goods_occurrence[goods_value] = goods_occurrence.get(goods_value, 0) + 1
+                                color_number = goods_occurrence[goods_value]
+                                template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
+                                template_sheet.cell(row=row_idx, column=color_col_idx, value=f'Color {color_number}')
+                            else:
+                                # Single variant - use 'One Color'
+                                template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
+                                template_sheet.cell(row=row_idx, column=color_col_idx, value='One Color')
+                        else:
+                            # Has color value - Variation Theme stays as 'Color' (already set by mapping)
+                            # Color value is already set by the mapping
+                            pass
+                    
+                    print(f"      Applied conditional logic to {len(color_data)} rows")
+                    print(f"      - Rows with color: Set Variation Theme = 'Color' (existing value)")
+                    print(f"      - Rows without color: Set Variation Theme = 'Color'")
+                    print(f"        - Multi-variant products: Sequential 'Color 1', 'Color 2', etc.")
+                    print(f"        - Single products: 'One Color'")
+            
+            # Pricing strategy calculation
+            print("    Calculating pricing strategy (1x and 1.25x Faire price, floored to X.99)...")
+            if base_price_col_indices and list_price_col_indices:
+                # Get the USD Unit Retail Price data
+                if 'USD Unit Retail Price' in category_df.columns:
+                    price_data = category_df['USD Unit Retail Price'].tolist()
+                    
+                    for row_idx, price_value in enumerate(price_data, 5):
+                        if pd.notna(price_value) and price_value != '':
+                            try:
+                                # Convert to float and calculate pricing strategy
+                                price_float = float(price_value)
+                                
+                                # Base Price: 1x Faire price, floored to X.99
+                                base_price = math.floor(price_float) - 0.01
+                                base_price = max(0.01, base_price)  # Ensure minimum price
+                                
+                                # List Price: 1.25x Faire price, floored to X.99
+                                list_price = math.floor(price_float * 1.25) - 0.01
+                                list_price = max(base_price + 0.01, list_price)  # Ensure list price > base price
+                                
+                                # Write to all Base Price columns
+                                for col_idx in base_price_col_indices:
+                                    template_sheet.cell(row=row_idx, column=col_idx, value=base_price)
+                                
+                                # Write to all List Price columns
+                                for col_idx in list_price_col_indices:
+                                    template_sheet.cell(row=row_idx, column=col_idx, value=list_price)
+                                    
+                            except (ValueError, TypeError):
+                                # If price conversion fails, skip this row
+                                continue
+                    
+                    print(f"      Set pricing strategy for {len(price_data)} rows")
+                    print(f"      Base Price: 1x Faire price, floored, minus 1 cent")
+                    print(f"      List Price: 1.25x Faire price, floored, minus 1 cent")
+            
+            # Contribution Goods transformation
+            print("    Processing Contribution Goods transformation...")
+            if 'SKU' in category_df.columns:
+                sku_data = category_df['SKU'].tolist()
+                contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
+                
+                # Find the Contribution Goods column
+                contribution_goods_col_idx = None
+                for col_idx, cell in enumerate(template_sheet[2], 1):
+                    if str(cell.value) == 'Contribution Goods':
+                        contribution_goods_col_idx = col_idx
+                        break
+                
+                if contribution_goods_col_idx is not None:
+                    for row_idx, goods_value in enumerate(contribution_goods_data, 5):
+                        template_sheet.cell(row=row_idx, column=contribution_goods_col_idx, value=goods_value)
+                    
+                    print(f"      Transformed {len(contribution_goods_data)} SKUs to Contribution Goods")
+                    print("      Sample transformations:")
+                    for i, (sku, goods) in enumerate(zip(sku_data[:5], contribution_goods_data[:5]), 1):
+                        print(f"        {i}. '{sku}' → '{goods}'")
+            
+            # Image URL processing
+            print("    Processing Image URLs...")
+            image_columns = [col for col in category_df.columns if 'Image' in col]
+            if image_columns:
+                print(f"      Found {len(image_columns)} image columns")
+                
+                # Find Detail Images URL columns in template
+                detail_images_col_indices = []
+                for col_idx, cell in enumerate(template_sheet[2], 1):
+                    if 'Detail Images URL' in str(cell.value):
+                        detail_images_col_indices.append(col_idx)
+                
+                if detail_images_col_indices:
+                    print(f"      Found {len(detail_images_col_indices)} Detail Images URL columns")
+                    
+                    option_image_count = 0
+                    product_image_count = 0
+                    no_image_count = 0
+                    
+                    for row_idx, row in enumerate(category_df.iterrows(), 5):
+                        row_data = row[1]
+                        
+                        # Try to find image data
+                        image_urls = None
+                        
+                        # First, try Option Image columns
+                        for col in image_columns:
+                            if 'Option' in col and pd.notna(row_data[col]) and str(row_data[col]).strip() != '':
+                                image_urls = row_data[col]
+                                option_image_count += 1
+                                break
+                        
+                        # If no option image, try Product Images
+                        if image_urls is None:
+                            for col in image_columns:
+                                if 'Product' in col and pd.notna(row_data[col]) and str(row_data[col]).strip() != '':
+                                    image_urls = row_data[col]
+                                    product_image_count += 1
+                                    break
+                        
+                        if image_urls is None:
+                            no_image_count += 1
+                            continue
+                        
+                        # Process image URLs
+                        processed_urls = split_image_urls(image_urls)
+                        
+                        # Write to all Detail Images URL columns
+                        for col_idx in detail_images_col_indices:
+                            template_sheet.cell(row=row_idx, column=col_idx, value=processed_urls)
+                    
+                    print(f"        - Used Option Image: {option_image_count} rows")
+                    print(f"        - Used Product Images: {product_image_count} rows")
+                    print(f"        - No image data: {no_image_count} rows")
+            else:
+                print("      Warning: No image columns found in Faire file")
+            
+            # Process fixed column values with conditional category assignment
+            print("    Processing fixed column values with conditional category assignment...")
+            
+            for temu_col, fixed_value in FIXED_COLUMN_VALUES.items():
+                print(f"      Setting fixed value: {temu_col} = '{fixed_value}'")
                 
                 # Find the column index in Temu template
                 temu_col_idx = None
@@ -267,307 +569,60 @@ def copy_mapped_data(filter_stock=True):
                         break
                 
                 if temu_col_idx is None:
-                    print(f"    Warning: Could not find column '{temu_col}' in template")
+                    print(f"        Warning: Could not find column '{temu_col}' in template")
                     continue
                 
-                # Apply transformation if defined
-                if faire_col in TRANSFORMATIONS:
-                    source_data = [TRANSFORMATIONS[faire_col](value) for value in source_data]
-                    print(f"    Applied transformation: {faire_col}")
+                # Get the number of data rows
+                num_data_rows = len(category_df)
                 
-                # Special handling for Quantity: populate all Quantity columns
-                if temu_col == 'Quantity' and quantity_col_indices:
-                    for row_idx, value in enumerate(source_data, 5):
-                        # Handle NaN values
-                        cell_value = '' if pd.isna(value) else value
-                        for q_col_idx in quantity_col_indices:
-                            template_sheet.cell(row=row_idx, column=q_col_idx, value=cell_value)
-                    print(f"    Copied {len(source_data)} values to all Quantity columns ({len(quantity_col_indices)})")
-                    continue  # Skip the default single-column write below
-                
-                # Write data to template (default: single column)
-                for row_idx, value in enumerate(source_data, 5):
-                    # Handle NaN values
-                    if pd.isna(value):
-                        template_sheet.cell(row=row_idx, column=temu_col_idx, value='')
-                    else:
-                        template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
-                
-                print(f"    Copied {len(source_data)} values")
-            else:
-                print(f"  Skipping: {faire_col} -> {temu_col} (column not found)")
-        
-        # Conditional logic for Variation Theme and Color assignment
-        print("Processing conditional Variation Theme logic...")
-        if variation_theme_col_idx is not None:
-            # Get the Contribution Goods data to detect duplicates
-            contribution_goods_data = []
-            if 'SKU' in category_df.columns:
-                # Transform SKU to Contribution Goods for comparison
-                sku_data = category_df['SKU'].tolist()
-                contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
-            
-            # Find the Color column
-            color_col_idx = None
-            for col_idx, cell in enumerate(template_sheet[2], 1):
-                if str(cell.value) == 'Color':
-                    color_col_idx = col_idx
-                    break
-            
-            # Get the Color data that was mapped
-            color_data = []
-            if 'Option 1 Value' in category_df.columns:
-                color_data = category_df['Option 1 Value'].tolist()
-            
-            if color_col_idx is not None and contribution_goods_data and color_data:
-                # Count occurrences of each Contribution Goods value
-                goods_count = {}
-                for goods in contribution_goods_data:
-                    goods_count[goods] = goods_count.get(goods, 0) + 1
-                
-                # Process each row for conditional logic
-                goods_occurrence = {}  # Track occurrence count for each goods value
-                
-                for row_idx, (color_value, goods_value) in enumerate(zip(color_data, contribution_goods_data), 5):
-                    if pd.isna(color_value) or str(color_value).strip() == '':
-                        # No color value - determine if this is part of a multi-variant product
-                        if goods_count.get(goods_value, 0) > 1:
-                            # Multiple variants exist - assign sequential color
-                            goods_occurrence[goods_value] = goods_occurrence.get(goods_value, 0) + 1
-                            color_number = goods_occurrence[goods_value]
-                            template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
-                            template_sheet.cell(row=row_idx, column=color_col_idx, value=f'Color {color_number}')
-                        else:
-                            # Single variant - use 'One Color'
-                            template_sheet.cell(row=row_idx, column=variation_theme_col_idx, value='Color')
-                            template_sheet.cell(row=row_idx, column=color_col_idx, value='One Color')
-                    else:
-                        # Has color value - Variation Theme stays as 'Color' (already set by mapping)
-                        # Color value is already set by the mapping
-                        pass
-                
-                print(f"  Applied conditional logic to {len(color_data)} rows")
-                print(f"  - Rows with color: Set Variation Theme = 'Color' (existing value)")
-                print(f"  - Rows without color: Set Variation Theme = 'Color'")
-                print(f"    - Multi-variant products: Sequential 'Color 1', 'Color 2', etc.")
-                print(f"    - Single products: 'One Color'")
-            else:
-                print("  Warning: Could not find Color column or Contribution Goods data")
-        else:
-            print("  Warning: Could not find Variation Theme column for conditional logic")
-        
-        # Calculate pricing strategy
-        if base_price_col_indices and list_price_col_indices:
-            print("Calculating pricing strategy (1x and 1.25x Faire price, floored to X.99)...")
-            num_data_rows = len(category_df)
-            
-            # Get the original Faire price data
-            faire_price_col = 'USD Unit Retail Price'
-            faire_prices = category_df[faire_price_col].tolist()
-            
-            for row_idx in range(5, 5 + num_data_rows):
-                try:
-                    # Get the original Faire price for this row
-                    faire_price = faire_prices[row_idx - 5] if row_idx - 5 < len(faire_prices) else None
+                # Special handling for Category column with enhanced assignment
+                if temu_col == 'Category':
+                    print("        Applying enhanced category assignment...")
+                    category_assignments = {}
                     
-                    if faire_price is not None and str(faire_price).strip() != '':
-                        faire_price_float = float(str(faire_price))
+                    # Get product names and image data for category assignment
+                    product_names = []
+                    image_data = []
+                    if 'Product Name (English)' in category_df.columns:
+                        product_names = category_df['Product Name (English)'].tolist()
+                    if 'Product Images' in category_df.columns:
+                        image_data = category_df['Product Images'].tolist()
+                    
+                    # Process each row with enhanced category assignment
+                    for row_idx in range(5, 5 + num_data_rows):
+                        product_name = product_names[row_idx - 5] if row_idx - 5 < len(product_names) else ''
+                        img_data = image_data[row_idx - 5] if row_idx - 5 < len(image_data) else None
                         
-                        # Calculate Base Price: 1x Faire price, floored, minus 1 cent
-                        base_price_raw = faire_price_float * 1
-                        base_price_floored = int(base_price_raw)
-                        base_price_final = base_price_floored - 0.01
+                        # Use the enhanced category assigner
+                        category_code = category_assigner.determine_category(product_name, img_data)
                         
-                        # Calculate List Price: 1.25x Faire price, floored, minus 1 cent
-                        list_price_raw = faire_price_float * 1.25
-                        list_price_floored = int(list_price_raw)
-                        list_price_final = list_price_floored - 0.01
+                        # Track category assignments for reporting
+                        if category_code not in category_assignments:
+                            category_assignments[category_code] = 0
+                        category_assignments[category_code] += 1
                         
-                        # Set Base Price - USD
-                        for bp_col_idx in base_price_col_indices:
-                            template_sheet.cell(row=row_idx, column=bp_col_idx, value=base_price_final)
-                        
-                        # Set List Price - USD
-                        for lp_col_idx in list_price_col_indices:
-                            template_sheet.cell(row=row_idx, column=lp_col_idx, value=list_price_final)
-                    else:
-                        # Set empty values if no Faire price
-                        for bp_col_idx in base_price_col_indices:
-                            template_sheet.cell(row=row_idx, column=bp_col_idx, value='')
-                        for lp_col_idx in list_price_col_indices:
-                            template_sheet.cell(row=row_idx, column=lp_col_idx, value='')
-                            
-                except (TypeError, ValueError) as e:
-                    # Set empty values on error
-                    for bp_col_idx in base_price_col_indices:
-                        template_sheet.cell(row=row_idx, column=bp_col_idx, value='')
-                    for lp_col_idx in list_price_col_indices:
-                        template_sheet.cell(row=row_idx, column=lp_col_idx, value='')
-            
-            print(f"  Set pricing strategy for {num_data_rows} rows")
-            print(f"  Base Price: 1x Faire price, floored, minus 1 cent")
-            print(f"  List Price: 1.25x Faire price, floored, minus 1 cent")
-        
-        # Special handling for Contribution Goods (transformed from SKU)
-        print("Processing Contribution Goods transformation...")
-        if 'SKU' in category_df.columns:
-            # Get SKU data
-            sku_data = category_df['SKU'].tolist()
-            
-            # Transform SKU to Contribution Goods
-            contribution_goods_data = [transform_sku_to_goods(sku) for sku in sku_data]
-            
-            # Find Contribution Goods column in template
-            goods_col_idx = None
-            for col_idx, cell in enumerate(template_sheet[2], 1):  # Row 2 contains headers
-                if 'Contribution Goods' in str(cell.value):
-                    goods_col_idx = col_idx
-                    break
-            
-            if goods_col_idx is not None:
-                # Write transformed data to Contribution Goods column
-                for row_idx, value in enumerate(contribution_goods_data, 5):
-                    # Handle NaN values
-                    cell_value = '' if pd.isna(value) else value
-                    template_sheet.cell(row=row_idx, column=goods_col_idx, value=cell_value)
-                
-                print(f"  Transformed {len(contribution_goods_data)} SKUs to Contribution Goods")
-                
-                # Show some examples of the transformation
-                print("  Sample transformations:")
-                for i, (original, transformed) in enumerate(zip(sku_data[:5], contribution_goods_data[:5]), 1):
-                    try:
-                        print(f"    {i}. '{original}' → '{transformed}'")
-                    except UnicodeEncodeError:
-                        # Handle encoding issues by using ASCII-safe representation
-                        safe_original = str(original).encode('ascii', 'replace').decode()
-                        safe_transformed = str(transformed).encode('ascii', 'replace').decode()
-                        print(f"    {i}. '{safe_original}' → '{safe_transformed}'")
-            else:
-                print("  Warning: Could not find 'Contribution Goods' column in template")
-        else:
-            print("  Warning: 'SKU' column not found in Faire file")
-        
-        # Special handling for Image URLs
-        print("Processing Image URLs...")
-        if 'Option Image' in category_df.columns or 'Product Images' in category_df.columns:
-            # Find SKU Images URL columns in template
-            sku_images_columns = []
-            detail_images_columns = []
-            
-            for col_idx, cell in enumerate(template_sheet[2], 1):  # Row 2 contains headers
-                cell_value = str(cell.value)
-                if 'SKU Images URL' in cell_value:
-                    sku_images_columns.append(col_idx)
-                elif 'Detail Images URL' in cell_value:
-                    detail_images_columns.append(col_idx)
-            
-            print(f"  Found {len(sku_images_columns)} SKU Images URL columns")
-            print(f"  Found {len(detail_images_columns)} Detail Images URL columns")
-            
-            # Process each row
-            option_image_count = 0
-            product_images_count = 0
-            no_image_count = 0
-            
-            for row_idx, (_, row_data) in enumerate(category_df.iterrows(), 5):
-                # Determine which image source to use
-                image_urls = []
-                
-                # First try Option Image
-                if 'Option Image' in category_df.columns and pd.notna(row_data['Option Image']):
-                    image_urls = [str(row_data['Option Image']).strip()]
-                    option_image_count += 1
-                # Fallback to Product Images
-                elif 'Product Images' in category_df.columns and pd.notna(row_data['Product Images']):
-                    image_urls = split_image_urls(row_data['Product Images'])
-                    product_images_count += 1
+                        template_sheet.cell(row=row_idx, column=temu_col_idx, value=category_code)
+                    
+                    # Report category assignments with descriptions
+                    print(f"        Category assignments:")
+                    for category_code, count in category_assignments.items():
+                        category_info = category_assigner.get_category_info(category_code)
+                        description = category_info['description'] if category_info else 'Unknown'
+                        print(f"          {category_code} ({description}): {count} products")
                 else:
-                    no_image_count += 1
+                    # Write fixed value to all data rows for non-category columns
+                    for row_idx in range(5, 5 + num_data_rows):
+                        template_sheet.cell(row=row_idx, column=temu_col_idx, value=fixed_value)
                 
-                # Assign URLs to SKU Images URL columns
-                if image_urls and sku_images_columns:
-                    for i, url in enumerate(image_urls):
-                        if i < len(sku_images_columns):
-                            template_sheet.cell(row=row_idx, column=sku_images_columns[i], value=url)
-                    
-                    # Also assign first URL to first Detail Images URL column
-                    if detail_images_columns and image_urls:
-                        template_sheet.cell(row=row_idx, column=detail_images_columns[0], value=image_urls[0])
+                print(f"        Set values for {num_data_rows} rows")
             
-            print(f"  Processed image URLs for {len(category_df)} rows")
-            print(f"    - Used Option Image: {option_image_count} rows")
-            print(f"    - Used Product Images: {product_images_count} rows")
-            print(f"    - No image data: {no_image_count} rows")
-        else:
-            print("  Warning: No image columns found in Faire file")
+            # Save the workbook
+            workbook.save(chunk_filename)
+            workbook.close()
+            
+            print(f"      Completed chunk {chunk_idx}/{len(data_chunks)}: {chunk_filename}")
         
-        # Process fixed column values with conditional category assignment
-        print("Processing fixed column values with conditional category assignment...")
-        
-        for temu_col, fixed_value in FIXED_COLUMN_VALUES.items():
-            print(f"  Setting fixed value: {temu_col} = '{fixed_value}'")
-            
-            # Find the column index in Temu template
-            temu_col_idx = None
-            for col_idx, cell in enumerate(template_sheet[2], 1):  # Row 2 contains headers
-                if temu_col in str(cell.value):
-                    temu_col_idx = col_idx
-                    break
-            
-            if temu_col_idx is None:
-                print(f"    Warning: Could not find column '{temu_col}' in template")
-                continue
-            
-            # Get the number of data rows
-            num_data_rows = len(category_df)
-            
-            # Special handling for Category column with enhanced assignment
-            if temu_col == 'Category':
-                print("    Applying enhanced category assignment...")
-                category_assignments = {}
-                
-                # Get product names and image data for category assignment
-                product_names = []
-                image_data = []
-                if 'Product Name (English)' in category_df.columns:
-                    product_names = category_df['Product Name (English)'].tolist()
-                if 'Product Images' in category_df.columns:
-                    image_data = category_df['Product Images'].tolist()
-                
-                # Process each row with enhanced category assignment
-                for row_idx in range(5, 5 + num_data_rows):
-                    product_name = product_names[row_idx - 5] if row_idx - 5 < len(product_names) else ''
-                    img_data = image_data[row_idx - 5] if row_idx - 5 < len(image_data) else None
-                    
-                    # Use the enhanced category assigner
-                    category_code = category_assigner.determine_category(product_name, img_data)
-                    
-                    # Track category assignments for reporting
-                    if category_code not in category_assignments:
-                        category_assignments[category_code] = 0
-                    category_assignments[category_code] += 1
-                    
-                    template_sheet.cell(row=row_idx, column=temu_col_idx, value=category_code)
-                
-                # Report category assignments with descriptions
-                print(f"    Category assignments:")
-                for category_code, count in category_assignments.items():
-                    category_info = category_assigner.get_category_info(category_code)
-                    description = category_info['description'] if category_info else 'Unknown'
-                    print(f"      {category_code} ({description}): {count} products")
-            else:
-                # Write fixed value to all data rows for non-category columns
-                for row_idx in range(5, 5 + num_data_rows):
-                    template_sheet.cell(row=row_idx, column=temu_col_idx, value=fixed_value)
-            
-            print(f"    Set values for {num_data_rows} rows")
-        
-        # Save the workbook
-        workbook.save(output_file)
-        workbook.close()
-        
-        print(f"Completed processing {category_name} category ({len(category_df)} products)")
+        print(f"Completed processing {category_name} category ({len(product_data)} products) -> {len(data_chunks)} files")
     
     # ============================================================================
     # MAIN PROCESSING FUNCTION
@@ -603,10 +658,11 @@ def copy_mapped_data(filter_stock=True):
             # }
         }
         
-        print("Starting enhanced mapping tool...")
+        print("Starting enhanced mapping tool with chunking...")
         print(f"Mapping {len(COLUMN_MAPPINGS)} columns")
         print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
         print(f"Categories: {list(CATEGORY_CONFIGS.keys())}")
+        print("Chunking: All files will be split into chunks of 1000 records")
         
         # Initialize category assigner
         category_assigner = CategoryAssigner()
@@ -702,7 +758,56 @@ def copy_mapped_data(filter_stock=True):
         print(f"\nSuccess! Output files saved to:")
         for category, config in CATEGORY_CONFIGS.items():
             if len(category_data[category]) > 0:
-                print(f"  {category.title()}: {config['output_file']}")
+                print(f"  {category.title()}: {config['output_file']} (chunked)")
+        
+        # ============================================================================
+        # PRICE AND STOCK UPDATE PROCESSING
+        # ============================================================================
+        print("\n" + "="*60)
+        print("PROCESSING PRICE AND STOCK UPDATES FROM PRICES.XLS")
+        print("="*60)
+        
+        try:
+            # Initialize the price/stock updater
+            updater = PriceStockUpdater()
+            
+            # Prepare product data for price/stock updates
+            # We need all SKUs and their base prices from the processed data
+            all_skus = []
+            all_base_prices = []
+            
+            # Collect all SKUs and base prices from all categories
+            for category, data in category_data.items():
+                if len(data) > 0:
+                    for row in data:
+                        sku = str(row['SKU']) if pd.notna(row['SKU']) else ''
+                        base_price = row.get('USD Unit Retail Price', 0)
+                        
+                        if sku and sku.strip() != '':
+                            all_skus.append(sku)
+                            all_base_prices.append(base_price)
+            
+            # Create product data DataFrame for the updater
+            product_data = pd.DataFrame({
+                'SKU': all_skus,
+                'Product Name': ['Product'] * len(all_skus)  # Placeholder, not used by updater
+            })
+            
+            print(f"Processing price and stock updates for {len(all_skus)} products...")
+            
+            # Process the updates
+            success = updater.process_updates(product_data, all_base_prices)
+            
+            if success:
+                print("✅ Price and stock update files created successfully!")
+                print(f"  Price files: {updater.price_output} (chunked)")
+                print(f"  Stock files: {updater.stock_output} (chunked)")
+            else:
+                print("❌ Some update files failed to create")
+                
+        except Exception as e:
+            print(f"❌ Error during price/stock update processing: {e}")
+            print("Continuing with main process...")
         
         return  # Exit early since we're now using separate function
         
@@ -733,11 +838,11 @@ def show_available_columns():
 def parse_arguments():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(
-        description='Faire to Temu data migration tool with category splitting and stock filtering',
+        description='Faire to Temu data migration tool with category splitting, stock filtering, and chunking',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python Faire2Temu.py                    # Default: filter stock > 0
+  python Faire2Temu.py                    # Default: filter stock > 0, chunk files
   python Faire2Temu.py --filter-stock     # Explicitly enable stock filtering
   python Faire2Temu.py --no-filter-stock  # Disable stock filtering (process all products)
   python Faire2Temu.py -f                 # Short form: enable stock filtering
@@ -751,19 +856,16 @@ Examples:
         default=True,
         help='Filter products with stock > 0 (default: True)'
     )
-    
     parser.add_argument(
-        '--no-filter-stock',
+        '--no-filter-stock', 
         action='store_true',
         help='Disable stock filtering (process all products)'
     )
-    
     parser.add_argument(
         '-f', '--force-filter',
         action='store_true',
         help='Force enable stock filtering'
     )
-    
     parser.add_argument(
         '-F', '--force-no-filter',
         action='store_true',
@@ -775,19 +877,13 @@ Examples:
 if __name__ == "__main__":
     args = parse_arguments()
     
-    # Determine if stock filtering should be enabled
+    # Determine filtering behavior
     if args.no_filter_stock or args.force_no_filter:
         filter_stock = False
     elif args.filter_stock or args.force_filter:
         filter_stock = True
     else:
-        # Default behavior
-        filter_stock = True
+        filter_stock = True  # Default behavior
     
     print(f"Stock filtering: {'ENABLED' if filter_stock else 'DISABLED'}")
-    
-    # Uncomment the line below to see available columns
-    # show_available_columns()
-    
-    # Run the main mapping function
-    copy_mapped_data(filter_stock=filter_stock)
+    copy_mapped_data(filter_stock=filter_stock) 
