@@ -3,11 +3,13 @@ import shutil
 from openpyxl import load_workbook
 import warnings
 import re
+import argparse
+import sys
 
 # Suppress openpyxl warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
-def copy_mapped_data():
+def copy_mapped_data(filter_stock=True):
     """
     Enhanced tool to copy mapped data from Faire products to Temu template.
     
@@ -24,6 +26,9 @@ def copy_mapped_data():
         copy_mapped_data()
     
     The 'other' category is always the catch-all for products not matching any specific prefixes.
+    
+    Args:
+        filter_stock (bool): If True, only process products with stock > 0. Default is True.
     """
     
     # ============================================================================
@@ -431,7 +436,13 @@ def copy_mapped_data():
                 # Show some examples of the transformation
                 print("  Sample transformations:")
                 for i, (original, transformed) in enumerate(zip(sku_data[:5], contribution_goods_data[:5]), 1):
-                    print(f"    {i}. '{original}' → '{transformed}'")
+                    try:
+                        print(f"    {i}. '{original}' → '{transformed}'")
+                    except UnicodeEncodeError:
+                        # Handle encoding issues by using ASCII-safe representation
+                        safe_original = str(original).encode('ascii', 'replace').decode()
+                        safe_transformed = str(transformed).encode('ascii', 'replace').decode()
+                        print(f"    {i}. '{safe_original}' → '{safe_transformed}'")
             else:
                 print("  Warning: Could not find 'Contribution Goods' column in template")
         else:
@@ -625,11 +636,32 @@ def copy_mapped_data():
         if missing_temu_columns:
             print(f"Warning: Missing Temu columns: {missing_temu_columns}")
         
-        # Step 4: Split data into categories
-        print("Splitting data into categories...")
+        # Step 4: Filter and split data into categories
+        print("Filtering and splitting data into categories...")
         
         # Get data from row 4 onwards (skip header rows)
         data_df = faire_df.iloc[3:].copy()
+        
+        # Filter for products with stock > 0 (if enabled)
+        if filter_stock:
+            print("Filtering products with stock > 0...")
+            total_products = len(data_df)
+            
+            # Filter based on 'On Hand Inventory' > 0
+            if 'On Hand Inventory' in data_df.columns:
+                # Convert to numeric, handling any non-numeric values
+                inventory_data = pd.to_numeric(data_df['On Hand Inventory'], errors='coerce')
+                in_stock_mask = inventory_data > 0
+                data_df = data_df[in_stock_mask]
+                
+                filtered_products = len(data_df)
+                print(f"  Total products: {total_products}")
+                print(f"  Products with stock > 0: {filtered_products}")
+                print(f"  Products filtered out: {total_products - filtered_products}")
+            else:
+                print("  Warning: 'On Hand Inventory' column not found, processing all products")
+        else:
+            print("Stock filtering disabled - processing all products")
         
         # Initialize category data containers
         category_data = {category: [] for category in CATEGORY_CONFIGS.keys()}
@@ -698,9 +730,64 @@ def show_available_columns():
     except Exception as e:
         print(f"Error showing columns: {e}")
 
+def parse_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description='Faire to Temu data migration tool with category splitting and stock filtering',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python Faire2Temu.py                    # Default: filter stock > 0
+  python Faire2Temu.py --filter-stock     # Explicitly enable stock filtering
+  python Faire2Temu.py --no-filter-stock  # Disable stock filtering (process all products)
+  python Faire2Temu.py -f                 # Short form: enable stock filtering
+  python Faire2Temu.py -F                 # Short form: disable stock filtering
+        """
+    )
+    
+    parser.add_argument(
+        '--filter-stock', 
+        action='store_true',
+        default=True,
+        help='Filter products with stock > 0 (default: True)'
+    )
+    
+    parser.add_argument(
+        '--no-filter-stock',
+        action='store_true',
+        help='Disable stock filtering (process all products)'
+    )
+    
+    parser.add_argument(
+        '-f', '--force-filter',
+        action='store_true',
+        help='Force enable stock filtering'
+    )
+    
+    parser.add_argument(
+        '-F', '--force-no-filter',
+        action='store_true',
+        help='Force disable stock filtering'
+    )
+    
+    return parser.parse_args()
+
 if __name__ == "__main__":
+    args = parse_arguments()
+    
+    # Determine if stock filtering should be enabled
+    if args.no_filter_stock or args.force_no_filter:
+        filter_stock = False
+    elif args.filter_stock or args.force_filter:
+        filter_stock = True
+    else:
+        # Default behavior
+        filter_stock = True
+    
+    print(f"Stock filtering: {'ENABLED' if filter_stock else 'DISABLED'}")
+    
     # Uncomment the line below to see available columns
     # show_available_columns()
     
     # Run the main mapping function
-    copy_mapped_data()
+    copy_mapped_data(filter_stock=filter_stock)

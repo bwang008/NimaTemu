@@ -10,6 +10,8 @@ The system is now organized into modular components for better maintainability a
 Faire2Temu/
 ├── Faire2Temu.py              # Main orchestrator (717 lines)
 ├── category_assigner.py        # Enhanced category logic (300+ lines)
+├── Faire2TemuApp.py           # Web interface (400+ lines)
+├── start_web_app.bat          # Easy startup script
 ├── data/
 │   ├── faire_products.xlsx     # Source Faire data
 │   └── temu_template.xlsx      # Temu template
@@ -51,6 +53,21 @@ Faire2Temu/
   - Priority-based matching (first match wins)
   - Extensible rule system
 
+### **3. Faire2TemuApp.py (Web Interface)**
+- **Purpose**: User-friendly web interface for non-technical users
+- **Responsibilities**:
+  - File upload and processing
+  - Real-time progress tracking
+  - Category testing and analysis
+  - System status monitoring
+- **Size**: 400+ lines
+- **Key Features**:
+  - Drag-and-drop file upload
+  - Progress bars and status updates
+  - Interactive category testing
+  - Download buttons for generated files
+  - Comprehensive help and documentation
+
 ## 🔧 **How It Works**
 
 ### **Data Flow:**
@@ -90,9 +107,26 @@ Product Name → category_assigner.py → Category Code
 
 ## 🚀 **Usage**
 
-### **Basic Usage:**
+### **Web Interface (Recommended for Non-Technical Users):**
 ```bash
+# Option 1: Double-click the batch file
+start_web_app.bat
+
+# Option 2: Run directly with streamlit
+streamlit run Faire2TemuApp.py
+```
+
+### **Command Line Usage (For Technical Users):**
+```bash
+# Default: Filter products with stock > 0
 python Faire2Temu.py
+
+# Stock filtering options
+python Faire2Temu.py --filter-stock     # Enable stock filtering (default)
+python Faire2Temu.py --no-filter-stock  # Disable stock filtering (process all products)
+python Faire2Temu.py -f                 # Short form: enable stock filtering
+python Faire2Temu.py -F                 # Short form: disable stock filtering
+python Faire2Temu.py --help             # Show all options
 ```
 
 ### **Testing Category Logic:**
@@ -100,7 +134,14 @@ python Faire2Temu.py
 python category_assigner.py
 ```
 
-### **Expected Output:**
+### **Web Interface Features:**
+- 🖥️ **Home Dashboard**: System status and recent activity
+- 📤 **Upload & Process**: Drag-and-drop file upload with progress tracking
+- 📊 **Category Analysis**: Test category assignment and view all available categories
+- ⚙️ **Settings**: System information and file path verification
+- 📖 **Help**: Comprehensive documentation and troubleshooting guide
+
+### **Command Line Expected Output:**
 ```
 Starting enhanced mapping tool...
 Mapping 8 columns
@@ -142,6 +183,28 @@ Success! Output files saved to:
 - `temu_template_other_update.xlsx`: Update version (no pricing/quantity)
 
 ## 🔧 **Configuration**
+
+### **Stock Filtering:**
+The script now includes optional stock filtering to only process products with inventory > 0:
+
+- **Default behavior**: Only processes products with stock > 0
+- **Disable filtering**: Use `--no-filter-stock` to process all products
+- **Filtering statistics**: Shows total products, in-stock count, and filtered count
+
+**Example output with filtering:**
+```
+Stock filtering: ENABLED
+Filtering products with stock > 0...
+  Total products: 5669
+  Products with stock > 0: 5251
+  Products filtered out: 418
+```
+
+**Example output without filtering:**
+```
+Stock filtering: DISABLED
+Stock filtering disabled - processing all products
+```
 
 ### **Column Mappings** (in Faire2Temu.py):
 ```python
