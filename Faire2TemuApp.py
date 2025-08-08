@@ -130,13 +130,17 @@ def show_home_page():
     
     # Version timestamp
     st.markdown("---")
-    st.caption("🕒 **Last Updated:** 08-08-2025 15:45:00 - Version 2.3 (Unicode Encoding Fix)")
-    st.caption("📝 **Current Features:** Persistent download buttons, ZIP download, alphabetical sorting, Unicode encoding fix")
+    st.caption("🕒 **Last Updated:** 08-08-2025 15:44:00 - Version 2.4 (Persistent Links Fix)")
+    st.caption("📝 **Current Features:** Persistent download buttons, ZIP download, alphabetical sorting, Unicode encoding fix, process completion tracking")
 
 def show_upload_page():
     """Display the file upload and processing page."""
     
     st.header("📤 Upload & Process Files")
+    
+    # Initialize session state for process completion tracking
+    if 'process_complete' not in st.session_state:
+        st.session_state.process_complete = False
     
     # File upload section
     st.subheader("1. Upload Your Faire Products File")
@@ -199,9 +203,38 @@ def show_upload_page():
     
     if st.button("🚀 Process Files", type="primary", disabled=uploaded_file is None):
         if uploaded_file is not None:
+            # Clear old files from output directory before processing
+            output_dir = Path("output")
+            if output_dir.exists():
+                for file in output_dir.glob("*.xlsx"):
+                    try:
+                        file.unlink()
+                        st.info(f"🗑️ Cleared old file: {file.name}")
+                    except Exception as e:
+                        st.warning(f"Could not delete {file.name}: {e}")
+            
+            # Process the files
             process_files(uploaded_file)
+            
+            # Set process complete flag and trigger rerun
+            st.session_state.process_complete = True
+            st.rerun()
         else:
             st.error("Please upload a file first!")
+    
+    # Display download section only if processing is complete
+    if st.session_state.process_complete:
+        st.subheader("4. Download Generated Files")
+        display_output_files_separated()
+        
+        # Add option to reset and process new files
+        st.markdown("---")
+        if st.button("🔄 Process New Files", key="reset_process"):
+            st.session_state.process_complete = False
+            st.session_state.files_processed = False
+            st.session_state.file_data_cache.clear()
+            st.session_state.zip_data = None
+            st.rerun()
 
 def display_output_files_persistent():
     """Display output files with persistent download buttons that don't disappear."""
@@ -545,8 +578,7 @@ def process_files(uploaded_file):
         output_dir.mkdir(exist_ok=True)
         st.success(f"✅ Output directory ready: {output_dir.absolute()}")
         
-        # Display generated files at the top using separated method
-        display_output_files_separated()
+        # Note: File display is now handled in show_upload_page after process completion
     
     except Exception as e:
         st.error(f"❌ Error: {e}")
