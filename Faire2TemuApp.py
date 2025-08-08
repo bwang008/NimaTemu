@@ -17,6 +17,8 @@ from pathlib import Path
 import subprocess
 import tempfile
 import shutil
+import zipfile
+import io
 
 # Add the current directory to Python path to import our modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -125,6 +127,11 @@ def show_home_page():
             st.info("No recent files found. Process some data to see activity here!")
     else:
         st.info("Output directory not found. Create some files to see activity here!")
+    
+    # Version timestamp
+    st.markdown("---")
+    st.caption("🕒 **Last Updated:** 08-08-2025 15:45:00 - Version 2.3 (Unicode Encoding Fix)")
+    st.caption("📝 **Current Features:** Persistent download buttons, ZIP download, alphabetical sorting, Unicode encoding fix")
 
 def show_upload_page():
     """Display the file upload and processing page."""
@@ -196,8 +203,255 @@ def show_upload_page():
         else:
             st.error("Please upload a file first!")
 
+def display_output_files_persistent():
+    """Display output files with persistent download buttons that don't disappear."""
+    
+    # Initialize session state for file persistence
+    if 'files_loaded' not in st.session_state:
+        st.session_state.files_loaded = False
+    
+    if 'file_data_cache' not in st.session_state:
+        st.session_state.file_data_cache = {}
+    
+    if 'zip_data' not in st.session_state:
+        st.session_state.zip_data = None
+    
+    # Check for output files
+    output_dir = Path("output")
+    if output_dir.exists():
+        files = sorted(list(output_dir.glob("*.xlsx")), key=lambda x: x.name)
+        
+        if files:
+            # Load files into session state if not already loaded
+            if not st.session_state.files_loaded:
+                st.info("🔄 Loading files into session state...")
+                st.session_state.files_loaded = True
+                # Cache file data
+                for file in files:
+                    try:
+                        with open(file, "rb") as f:
+                            st.session_state.file_data_cache[file.name] = f.read()
+                        st.success(f"✅ Cached {file.name}")
+                    except Exception as e:
+                        st.error(f"Error reading {file.name}: {e}")
+                
+                # Create ZIP data
+                try:
+                    st.info("🔄 Creating ZIP file...")
+                    zip_buffer = io.BytesIO()
+                    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                        for file in files:
+                            zip_file.write(file, file.name)
+                    zip_buffer.seek(0)
+                    st.session_state.zip_data = zip_buffer.getvalue()
+                    st.success("✅ ZIP file created")
+                except Exception as e:
+                    st.error(f"Error creating ZIP: {e}")
+            
+            # Display files section at the top
+            st.subheader("📁 Generated Files")
+            st.success(f"✅ Found {len(files)} files in output directory")
+            
+            # Download all as ZIP button
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write("**Download Options:**")
+            with col2:
+                if st.session_state.zip_data:
+                    st.download_button(
+                        label="📦 Download All as ZIP",
+                        data=st.session_state.zip_data,
+                        file_name="temu_output_files.zip",
+                        mime="application/zip",
+                        key="zip_download_main"
+                    )
+                else:
+                    st.error("❌ ZIP data not available")
+            
+            # Compact file list with persistent download buttons
+            st.write("**Individual Files:**")
+            
+            # Create a more compact display using cached data
+            for i, file in enumerate(files):
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                
+                with col1:
+                    if file.name in st.session_state.file_data_cache:
+                        st.download_button(
+                            label=f"📥 {file.name}",
+                            data=st.session_state.file_data_cache[file.name],
+                            file_name=file.name,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key=f"download_{file.name}_{i}_{hash(file.name)}"  # Very unique key
+                        )
+                    else:
+                        st.error(f"File data not available for {file.name}")
+                
+                with col2:
+                    try:
+                        file_size = file.stat().st_size
+                        st.write(f"{file_size / 1024:.1f} KB")
+                    except Exception as e:
+                        st.write("Unknown")
+                
+                with col3:
+                    try:
+                        mtime = file.stat().st_mtime
+                        st.write(pd.Timestamp.fromtimestamp(mtime).strftime("%m-%d %H:%M"))
+                    except Exception as e:
+                        st.write("Unknown")
+                
+                with col4:
+                    st.write("✅")
+            
+            # Add a small separator
+            st.markdown("---")
+            
+            # Add refresh option
+            if st.button("🔄 Refresh File List", key="refresh_file_list"):
+                st.session_state.files_loaded = False
+                st.session_state.file_data_cache.clear()
+                st.session_state.zip_data = None
+                st.rerun()
+            
+        else:
+            st.warning("⚠️ No Excel files found in output directory.")
+            st.info("💡 Process some data to see generated files here!")
+    else:
+        st.error(f"❌ Output directory does not exist: {output_dir.absolute()}")
+
+def ready_to_download():
+    """Check if files are ready to download based on session state."""
+    return st.session_state.get('files_loaded', False)
+
+def display_output_files_separated():
+    """Display output files with separated generation and download logic."""
+    
+    # Initialize session state
+    if 'files_processed' not in st.session_state:
+        st.session_state.files_processed = False
+    
+    if 'file_data_cache' not in st.session_state:
+        st.session_state.file_data_cache = {}
+    
+    if 'zip_data' not in st.session_state:
+        st.session_state.zip_data = None
+    
+    # Check for output files
+    output_dir = Path("output")
+    if output_dir.exists():
+        files = sorted(list(output_dir.glob("*.xlsx")), key=lambda x: x.name)
+        
+        if files:
+            # Load files into session state if not already processed
+            if not st.session_state.files_processed:
+                st.info("🔄 Loading files into session state...")
+                st.session_state.files_processed = True
+                
+                # Cache file data
+                for file in files:
+                    try:
+                        with open(file, "rb") as f:
+                            st.session_state.file_data_cache[file.name] = f.read()
+                        st.success(f"✅ Cached {file.name}")
+                    except Exception as e:
+                        st.error(f"Error reading {file.name}: {e}")
+                
+                # Create ZIP data
+                try:
+                    st.info("🔄 Creating ZIP file...")
+                    zip_buffer = io.BytesIO()
+                    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                        for file in files:
+                            zip_file.write(file, file.name)
+                    zip_buffer.seek(0)
+                    st.session_state.zip_data = zip_buffer.getvalue()
+                    st.success("✅ ZIP file created")
+                except Exception as e:
+                    st.error(f"Error creating ZIP: {e}")
+            
+            # Display files section at the top
+            st.subheader("📁 Generated Files")
+            st.success(f"✅ Found {len(files)} files in output directory")
+            
+            # Download all as ZIP button
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.write("**Download Options:**")
+            with col2:
+                if st.session_state.zip_data:
+                    st.download_button(
+                        label="📦 Download All as ZIP",
+                        data=st.session_state.zip_data,
+                        file_name="temu_output_files.zip",
+                        mime="application/zip",
+                        key="zip_download_separated"
+                    )
+                else:
+                    st.error("❌ ZIP data not available")
+            
+            # Compact file list with persistent download buttons
+            st.write("**Individual Files:**")
+            
+            # Create a more compact display using cached data
+            for i, file in enumerate(files):
+                col1, col2, col3, col4 = st.columns([3, 1, 1, 1])
+                
+                with col1:
+                    if file.name in st.session_state.file_data_cache:
+                        st.download_button(
+                            label=f"📥 {file.name}",
+                            data=st.session_state.file_data_cache[file.name],
+                            file_name=file.name,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key=f"download_separated_{file.name}_{i}_{hash(file.name)}"  # Very unique key
+                        )
+                    else:
+                        st.error(f"File data not available for {file.name}")
+                
+                with col2:
+                    try:
+                        file_size = file.stat().st_size
+                        st.write(f"{file_size / 1024:.1f} KB")
+                    except Exception as e:
+                        st.write("Unknown")
+                
+                with col3:
+                    try:
+                        mtime = file.stat().st_mtime
+                        st.write(pd.Timestamp.fromtimestamp(mtime).strftime("%m-%d %H:%M"))
+                    except Exception as e:
+                        st.write("Unknown")
+                
+                with col4:
+                    st.write("✅")
+            
+            # Add a small separator
+            st.markdown("---")
+            
+            # Add refresh option
+            if st.button("🔄 Refresh File List", key="refresh_file_list_separated"):
+                st.session_state.files_processed = False
+                st.session_state.file_data_cache.clear()
+                st.session_state.zip_data = None
+                st.rerun()
+            
+        else:
+            st.warning("⚠️ No Excel files found in output directory.")
+            st.info("💡 Process some data to see generated files here!")
+    else:
+        st.error(f"❌ Output directory does not exist: {output_dir.absolute()}")
+
 def process_files(uploaded_file):
     """Process the uploaded file using the Faire2Temu system."""
+    
+    # Clear previous file cache when processing new files
+    if 'files_processed' in st.session_state:
+        st.session_state.files_processed = False
+    if 'file_data_cache' in st.session_state:
+        st.session_state.file_data_cache.clear()
+    if 'zip_data' in st.session_state:
+        st.session_state.zip_data = None
     
     # Create a progress bar
     progress_bar = st.progress(0)
@@ -238,16 +492,28 @@ def process_files(uploaded_file):
         with st.spinner("Processing your data..."):
             try:
                 # Run the mapping process and capture output directly
+                st.info("🔄 Running Faire2Temu.py script...")
+                
+                # Force UTF-8 encoding for the subprocess
+                my_env = os.environ.copy()
+                my_env["PYTHONIOENCODING"] = "utf-8"
+                
                 result = subprocess.run(
                     [sys.executable, "Faire2Temu.py"],
                     capture_output=True,
                     text=True,
                     encoding='utf-8',  # Explicitly set UTF-8 encoding
-                    cwd=os.getcwd()
+                    cwd=os.getcwd(),
+                    env=my_env  # Pass the modified environment to the subprocess
                 )
+                
+                
                 
                 # Display the output in an expandable section
                 with st.expander("📋 Processing Log", expanded=True):
+                    st.info(f"🔄 Script executed with return code: {result.returncode}")
+                    st.info(f"📊 Output captured: {len(result.stdout.split())} lines of stdout, {len(result.stderr.split())} lines of stderr")
+                    
                     # Display stdout
                     if result.stdout:
                         st.text("=== STDOUT ===")
@@ -279,90 +545,8 @@ def process_files(uploaded_file):
         output_dir.mkdir(exist_ok=True)
         st.success(f"✅ Output directory ready: {output_dir.absolute()}")
         
-        # Display generated files
-        st.subheader("📁 Generated Files")
-        
-        # Add a refresh button
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.write("Click 'Refresh Files' to check for newly generated files:")
-        with col2:
-            if st.button("🔄 Refresh Files"):
-                st.rerun()
-        
-        output_dir = Path("output")
-        st.info(f"📂 Checking output directory: {output_dir.absolute()}")
-        
-        if output_dir.exists():
-            st.success(f"✅ Output directory exists")
-            files = list(output_dir.glob("*.xlsx"))
-            st.info(f"📊 Found {len(files)} Excel files in output directory")
-            
-            # Show all files for debugging
-            if files:
-                st.write("**All files found:**")
-                for file in files:
-                    st.write(f"- {file.name}")
-                
-                st.success(f"✅ Found {len(files)} files in output directory:")
-                
-                # Create download buttons for each file
-                for file in files:
-                    col1, col2, col3 = st.columns([2, 1, 1])
-                    with col1:
-                        try:
-                            with open(file, "rb") as f:
-                                st.download_button(
-                                    label=f"📥 Download {file.name}",
-                                    data=f.read(),
-                                    file_name=file.name,
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                )
-                        except Exception as e:
-                            st.error(f"Error reading {file.name}: {e}")
-                    with col2:
-                        try:
-                            file_size = file.stat().st_size
-                            st.write(f"{file_size / 1024:.1f} KB")
-                        except Exception as e:
-                            st.write("Size: Unknown")
-                    with col3:
-                        try:
-                            mtime = file.stat().st_mtime
-                            st.write(pd.Timestamp.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M"))
-                        except Exception as e:
-                            st.write("Time: Unknown")
-                
-                # Show detailed file info
-                file_info = []
-                for file in files:
-                    try:
-                        file_size = file.stat().st_size
-                        mtime = file.stat().st_mtime
-                        file_info.append({
-                            "File": file.name,
-                            "Size": f"{file_size / 1024:.1f} KB",
-                            "Modified": pd.Timestamp.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M"),
-                            "Path": str(file.absolute())
-                        })
-                    except Exception as e:
-                        file_info.append({
-                            "File": file.name,
-                            "Size": "Unknown",
-                            "Modified": "Unknown",
-                            "Path": str(file.absolute()),
-                            "Error": str(e)
-                        })
-                
-                st.subheader("📊 File Details")
-                st.dataframe(pd.DataFrame(file_info), use_container_width=True)
-                
-            else:
-                st.warning("⚠️ No Excel files found in output directory. Check the processing log for errors.")
-                st.info("💡 Tip: Make sure the processing completed successfully and check the log above for any error messages.")
-        else:
-            st.error(f"❌ Output directory does not exist: {output_dir.absolute()}")
-            st.info("💡 The output directory should be created automatically during processing.")
+        # Display generated files at the top using separated method
+        display_output_files_separated()
     
     except Exception as e:
         st.error(f"❌ Error: {e}")

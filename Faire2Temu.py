@@ -496,7 +496,7 @@ def copy_mapped_data(filter_stock=True):
                     print(f"      Transformed {len(contribution_goods_data)} SKUs to Contribution Goods")
                     print("      Sample transformations:")
                     for i, (sku, goods) in enumerate(zip(sku_data[:5], contribution_goods_data[:5]), 1):
-                        print(f"        {i}. '{sku}' → '{goods}'")
+                        print(f"        {i}. '{sku}' -> '{goods}'")
             
             # Image URL processing
             print("    Processing Image URLs...")
