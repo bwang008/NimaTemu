@@ -143,47 +143,60 @@ def show_upload_page():
         st.session_state.process_complete = False
     
     # File upload section
-    st.subheader("1. Upload Your Faire Products File")
+    st.subheader("1. Upload Required Files")
     
     st.info("""
     **📋 What to Upload:**
     - Upload your **Faire products export** (Excel file from Faire)
+    - Upload your **PRICES.XLS** file for price and stock updates
     - The **Temu template** is already configured and will be used automatically
-    - You only need to upload your product data file
     """)
     
-    uploaded_file = st.file_uploader(
-        "Choose your Faire products Excel file:",
-        type=['xlsx', 'xls'],
-        help="Upload your exported Faire products file (Excel format)"
-    )
+    # Create two columns for file uploads
+    col1, col2 = st.columns(2)
     
-    if uploaded_file is not None:
-        st.success(f"✅ File uploaded: {uploaded_file.name}")
+    with col1:
+        st.write("**Faire Products File:**")
+        faire_file = st.file_uploader(
+            "Choose your Faire products Excel file:",
+            type=['xlsx', 'xls'],
+            help="Upload your exported Faire products file (Excel format)",
+            key="faire_uploader"
+        )
         
-        # Show file info
-        file_info = {
-            "Name": uploaded_file.name,
-            "Size": f"{uploaded_file.size / 1024:.1f} KB",
-            "Type": uploaded_file.type
-        }
-        
-        col1, col2 = st.columns(2)
-        with col1:
+        if faire_file is not None:
+            st.success(f"✅ File uploaded: {faire_file.name}")
+            
+            # Show file info
+            file_info = {
+                "Name": faire_file.name,
+                "Size": f"{faire_file.size / 1024:.1f} KB",
+                "Type": faire_file.type
+            }
             st.json(file_info)
+    
+    with col2:
+        st.write("**PRICES.XLS File:**")
+        prices_file = st.file_uploader(
+            "Choose your PRICES.XLS file:",
+            type=['xls'],
+            help="Upload your PRICES.XLS file for price and stock updates",
+            key="prices_uploader"
+        )
         
-        with col2:
-            # Preview the uploaded file
-            try:
-                df = pd.read_excel(uploaded_file)
-                st.write(f"**Preview:** {len(df)} rows, {len(df.columns)} columns")
-                
-                # Show sample data
-                if st.checkbox("Show sample data"):
-                    st.dataframe(df.head(), use_container_width=True)
-                    
-            except Exception as e:
-                st.error(f"Error reading file: {e}")
+        if prices_file is not None:
+            st.success(f"✅ File uploaded: {prices_file.name}")
+            
+            # Show file info
+            file_info = {
+                "Name": prices_file.name,
+                "Size": f"{prices_file.size / 1024:.1f} KB",
+                "Type": prices_file.type
+            }
+            st.json(file_info)
+    
+    # Check if both files are uploaded
+    files_ready = faire_file is not None and prices_file is not None
     
     # Processing options
     st.subheader("2. Processing Options")
@@ -201,8 +214,8 @@ def show_upload_page():
     # Process button
     st.subheader("3. Process Files")
     
-    if st.button("🚀 Process Files", type="primary", disabled=uploaded_file is None):
-        if uploaded_file is not None:
+    if st.button("🚀 Process Files", type="primary", disabled=not files_ready):
+        if files_ready:
             # Clear old files from output directory before processing
             output_dir = Path("output")
             if output_dir.exists():
@@ -213,14 +226,30 @@ def show_upload_page():
                     except Exception as e:
                         st.warning(f"Could not delete {file.name}: {e}")
             
+            # Save uploaded files to correct locations
+            data_dir = Path("data")
+            data_dir.mkdir(exist_ok=True)
+            
+            # Save Faire products file
+            with open(data_dir / "faire_products.xlsx", "wb") as f:
+                f.write(faire_file.getbuffer())
+            st.success(f"✅ Saved: {faire_file.name} to data/")
+            
+            # Save PRICES.XLS file
+            price_dir = Path("data/price")
+            price_dir.mkdir(parents=True, exist_ok=True)
+            with open(price_dir / "PRICES.XLS", "wb") as f:
+                f.write(prices_file.getbuffer())
+            st.success(f"✅ Saved: {prices_file.name} to data/price/")
+            
             # Process the files
-            process_files(uploaded_file)
+            process_files(None)  # Files are now saved to disk
             
             # Set process complete flag and trigger rerun
             st.session_state.process_complete = True
             st.rerun()
         else:
-            st.error("Please upload a file first!")
+            st.error("Please upload both required files first!")
     
     # Display download section only if processing is complete
     if st.session_state.process_complete:
@@ -476,7 +505,7 @@ def display_output_files_separated():
         st.error(f"❌ Output directory does not exist: {output_dir.absolute()}")
 
 def process_files(uploaded_file):
-    """Process the uploaded file using the Faire2Temu system."""
+    """Process the uploaded files using the Faire2Temu system."""
     
     # Clear previous file cache when processing new files
     if 'files_processed' in st.session_state:
@@ -491,35 +520,24 @@ def process_files(uploaded_file):
     status_text = st.empty()
     
     try:
-        # Step 1: Save uploaded file to data directory
-        status_text.text("Step 1/4: Saving uploaded file...")
-        progress_bar.progress(25)
-        
-        data_dir = Path("data")
-        data_dir.mkdir(exist_ok=True)
-        
-        temp_file_path = data_dir / "faire_products.xlsx"
-        
-        with open(temp_file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        
-        st.success(f"✅ File saved to: {temp_file_path}")
+        # Step 1: Files are already saved in show_upload_page
+        status_text.text("Step 1/3: Input files are prepared.")
+        progress_bar.progress(33)
         
         # Step 2: Check if template exists
-        status_text.text("Step 2/4: Checking template file...")
-        progress_bar.progress(50)
+        status_text.text("Step 2/3: Checking template file...")
+        progress_bar.progress(66)
         
-        template_path = data_dir / "temu_template.xlsx"
+        template_path = Path("data") / "temu_template.xlsx"
         if not template_path.exists():
             st.error("❌ Template file not found! Please ensure 'data/temu_template.xlsx' exists.")
             return
         
         st.success("✅ Template file found (using pre-configured Temu template)")
-        st.info("💡 The Temu template is pre-configured and doesn't need to be uploaded each time.")
         
         # Step 3: Run the mapping process
-        status_text.text("Step 3/4: Processing data...")
-        progress_bar.progress(75)
+        status_text.text("Step 3/3: Processing data...")
+        progress_bar.progress(100)
         
         # Capture output from the mapping process
         with st.spinner("Processing your data..."):
@@ -540,26 +558,20 @@ def process_files(uploaded_file):
                     env=my_env  # Pass the modified environment to the subprocess
                 )
                 
-                
-                
                 # Display the output in an expandable section
                 with st.expander("📋 Processing Log", expanded=True):
                     st.info(f"🔄 Script executed with return code: {result.returncode}")
-                    st.info(f"📊 Output captured: {len(result.stdout.split())} lines of stdout, {len(result.stderr.split())} lines of stderr")
+                    st.info(f"📊 Output captured: {len(result.stdout.splitlines())} lines of stdout, {len(result.stderr.splitlines())} lines of stderr")
                     
                     # Display stdout
                     if result.stdout:
                         st.text("=== STDOUT ===")
-                        for line in result.stdout.split('\n'):
-                            if line.strip():
-                                st.text(line.strip())
+                        st.code(result.stdout)
                     
                     # Display stderr
                     if result.stderr:
                         st.text("=== STDERR ===")
-                        for line in result.stderr.split('\n'):
-                            if line.strip():
-                                st.text(line.strip())
+                        st.code(result.stderr)
                 
                 if result.returncode == 0:
                     st.success("✅ Processing completed successfully!")
@@ -569,17 +581,6 @@ def process_files(uploaded_file):
             except Exception as e:
                 st.error(f"❌ Error during processing: {e}")
         
-        # Step 4: Show results
-        status_text.text("Step 4/4: Preparing results...")
-        progress_bar.progress(100)
-        
-        # Ensure output directory exists
-        output_dir = Path("output")
-        output_dir.mkdir(exist_ok=True)
-        st.success(f"✅ Output directory ready: {output_dir.absolute()}")
-        
-        # Note: File display is now handled in show_upload_page after process completion
-    
     except Exception as e:
         st.error(f"❌ Error: {e}")
     finally:
