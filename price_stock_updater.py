@@ -92,6 +92,11 @@ class PriceStockUpdater:
                 # Load workbook
                 workbook = load_workbook(chunk_filename)
                 sheet = workbook.active
+                
+                # Check if sheet is valid
+                if sheet is None:
+                    print(f"    Error: No active sheet found in {chunk_filename}")
+                    continue
 
                 # Prepare data for this chunk
                 price_data = []
@@ -157,6 +162,11 @@ class PriceStockUpdater:
                 # Load workbook
                 workbook = load_workbook(chunk_filename)
                 sheet = workbook.active
+                
+                # Check if sheet is valid
+                if sheet is None:
+                    print(f"    Error: No active sheet found in {chunk_filename}")
+                    continue
 
                 # Prepare data for this chunk
                 stock_data = []
