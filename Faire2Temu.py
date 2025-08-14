@@ -82,7 +82,7 @@ class CategoryAssigner:
             '40388': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Gloves & Mittens / Women Fashion Gloves',
                       'keywords':['gloves','mittens']},
             '31141':{'description':'Clothing, Shoes & Jewelry / Shoe, Jewelry & Watch Accessories / Jewelry Accessories / Jewelry Boxes & Organizers / Jewelry Boxes',
-                     'keywords':['jewelry box','jewelry organizer','jewelry case']},
+                     'keywords':['jewelry box','jewelry organizer','jewelry case', 'jewelry gift box']},
             '29318':{'description':'Clothing, Shoes & Jewelry / Women / Accessories / Wallets, Card Cases & Money Organizers / Card & ID Cases / Card Cases',
                      'keywords':['card case','card holder','card organizer']},
             '19689':{'description':'Beauty & Personal Care / Tools & Accessories / Mirrors / Compact & Travel Mirrors',
