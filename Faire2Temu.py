@@ -13,6 +13,167 @@ from price_stock_updater import PriceStockUpdater
 # Suppress openpyxl warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
+# ============================================================================
+# CATEGORY ASSIGNER CLASS
+# ============================================================================
+
+class CategoryAssigner:
+    """Enhanced category assignment system"""
+    
+    def __init__(self):
+        self.category_rules = {
+            '27038':{'description':'Clothing, Shoes & Jewelry / Traditional & Cultural Wear / Latin American / Serapes & Ponchos',
+                     'keywords':['serape','poncho']},
+            '39460':{'description':'Arts, Crafts & Sewing / Scrapbooking & Stamping / Pens & Markers / Pens',
+                     'keywords':['pen','pens','pencils','pencil','marker','markers']},
+            '54140':{'description':'Industrial & Scientific / Retail Store Fixtures & Equipment / Retail Displays & Racks / Countertop Display Cases',
+                     'keywords':['display']},
+            '2062': {
+                'description': 'Pet Supplies / Small Animals / Carriers',
+                'keywords': ['pet', 'carrier']
+            },
+            '29312': {
+                'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Sunglasses & Eyewear',
+                'keywords': ['sunglasses', 'eyewear', 'glasses', 'glass case']
+            },
+            '29163': {
+                'description': 'Tote bags and totes',
+                'keywords': ['tote']
+            },
+            '30988': {
+                'description': 'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Cosmetic Cases',
+                'keywords': ['cosmetic', 'makeup']
+            },
+            '29324': {
+                'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Wallets',
+                'keywords': ['wallet', 'purse', 'coin', 'card']
+            },
+            
+            '29164': {
+                'description': 'Backpacks',
+                'keywords': ['backpack', 'laptop']
+            },
+            '24380': {
+                'description': 'Cell Phones & Accessories / Cases, Holsters & Sleeves',
+                'keywords': ['phone', 'mobile']
+            },
+            '29542': {
+                'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Necklaces',
+                'keywords': ['necklace', 'pendant','rosary']
+            },
+            '36256': {
+                'description': 'Sports & Outdoors / Sports / Leisure Sports / Pickleball / Paddles',
+                'keywords': ['paddle']
+            },
+            '19843': {
+                'description': 'Beauty & Personal Care / Foot, Hand & Nail Care / Tools & Accessories',
+                'keywords': ['nail','foot','tool']
+            },
+            '11267':{'description':'Shot Glass',
+                     'keywords':['shot glass','shotglass']},
+            '19280':{'description':'Hair Pin',
+                     'keywords':['hairpin','hair pin']},
+            '30977': {'description':'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Travel Duffels',
+                      'keywords':['duffel bag','travel bag']},
+            '13027': {'description':'Home & Kitchen / Seasonal Décor / Ornaments / Pendants, Drops & Finials',
+                      'keywords':['pendant','finial','ornament','decoration']},
+            '29284': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Keyrings & Keychains',
+                      'keywords': ['keyring','keychain','key ring','key chain']},
+            '40388': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Gloves & Mittens / Women Fashion Gloves',
+                      'keywords':['gloves','mittens']},
+            '31141':{'description':'Clothing, Shoes & Jewelry / Shoe, Jewelry & Watch Accessories / Jewelry Accessories / Jewelry Boxes & Organizers / Jewelry Boxes',
+                     'keywords':['jewelry box','jewelry organizer','jewelry case']},
+            '29318':{'description':'Clothing, Shoes & Jewelry / Women / Accessories / Wallets, Card Cases & Money Organizers / Card & ID Cases / Card Cases',
+                     'keywords':['card case','card holder','card organizer']},
+            '19689':{'description':'Beauty & Personal Care / Tools & Accessories / Mirrors / Compact & Travel Mirrors',
+                     'keywords':['mirror']},
+            '29512':{'description':'Clothing, Shoes & Jewelry / Women / Jewelry / Jewelry Sets',
+                     'keywords':['earrings','earring']},
+            '29514':{'description':'Clothing, Shoes & Jewelry / Women / Jewelry / Earrings / Drop & Dangle',
+                     'keywords':['drop','dangle']},
+            '12139':{'description':'Home & Kitchen / Home Décor Products / Home Décor Accents / Coasters',
+                     'keywords':['coaster','coasters','coater']},
+            '39157':{"description":"Clothing, Shoes & Jewelry / Women / Handbags & Wallets / Women's Waist Packs",
+                     'keywords':['waist pack','fanny pack']},
+            '19289':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Claws',
+                     'keywords':['claw']},
+            '19641':{'description':'Beauty & Personal Care / Tools & Accessories / Makeup Brushes & Tools / Brush Sets',
+                     'keywords':['brush']},
+
+            '10334':{'description':'Home & Kitchen / Kitchen & Dining / Storage & Organization / Thermoses / Insulated Beverage Containers / Tumblers',
+                     'keywords':['tumbler','water bottle']},
+            '30654':{'description':'Clothing, Shoes & Jewelry / Men / Accessories / Wallets, Card Cases & Money Organizers / Coin Purses & Pouches',
+                     'keywords':['coin purse','coin pouch']},
+            '36255':{'description':'Sports & Outdoors / Sports / Leisure Sports & Game Room / Outdoor Games & Activities / Pickleball / Balls',
+                     'keywords':['pickleball ball']},
+            '19284':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Headbands',
+                     'keywords':['headband']},
+            '19285':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Elastics & Ties',
+                     'keywords':['elastic','tie']},
+            '29270':{'description':'Clothing, Shoes & Jewelry / Women / Accessories / Hats & Caps / Baseball Caps',
+                     'keywords':['baseball cap']},
+            '12703':{'description':'Home & Kitchen / Storage & Organization / Kitchen Storage & Organization / Thermoses / Insulated Beverage Containers / Cups & Mugs',
+                     'keywords':['mug','cup']},
+            '2128':{'description':'Appliances / Small Kitchen Appliances / Blenders / Personal Size Blenders',
+                    'keywords':['blender']},
+            '39969':{'description':'Arts, Crafts & Sewing / Organization, Storage & Transport / Pen, Pencil & Marker Cases',
+                     'keywords':['pen case','pencil case','marker case','pen holder','pencil holder','marker holder']},
+            '10354':{'description':'Home & Kitchen / Kitchen & Dining / Storage & Organization / Food Storage / Food Containers / Containers',
+                     'keywords':['food container','food storage','lunch box','lunchbox','food holder','food organizer']},
+            '25491':{'description':'Toys & Games / Novelty & Gag Toys / Money Banks',
+                     'keywords':['money bank','piggy bank','tin box','tin container']},
+            '31007':{'description':'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Travel Accessories / Luggage Straps',
+                     'keywords':['luggage strap','bag strap']},
+            '28969':{'description':'Clothing, Shoes & Jewelry / Women / Clothing / Coats, Jackets & Vests / Fur & Faux Fur / Faux Fur',
+                     'keywords':['fur coat','fur vest','fur coat','fur vest','fur jacket','fur vests','fur coats','fur jackets']},
+            '30253':{'description':'Clothing, Shoes & Jewelry / Novelty & More / Clothing / Novelty / Men / Accessories / Scarves',
+                     'keywords':['scarf','scarves','shawl']},
+
+            '3833':{'description':'Electronics / Computers & Accessories / Computer Accessories & Peripherals / USB Gadgets / USB Fans',
+                    'keywords':['usb fan','hand fan','fan']},
+            '29280': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Hats & Caps / Sun Hats',
+                      'keywords':['hat']},
+            '11809':{'description':'Home & Kitchen / Bath / Towels / Beach Towels',
+                     'keywords':['towel']},
+            
+            #Last Buckets to hit when all above are not found, these are the most generic categories
+            '29153':{'description':'handbag',
+                     'keywords':['handbag']},
+            '29522': {
+                'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Brooches & Pins',
+                'keywords': ['brooch', 'pin', 'jewelry', 'accessory']
+            },
+            '29264': {
+                'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Belts',
+                'keywords': ['belt']
+            },
+            '28972':{'description':'Clothing, Shoes & Jewelry / Women / Clothing / Coats, Jackets & Vests / Casual Jackets',
+                     'keywords':['vest','coat','jacket']},
+            
+            
+        }
+    
+    def determine_category(self, product_name, image_data=None):
+        """Determine the best category based on product name and image data"""
+        if not product_name:
+            return '29153'  # Default category
+        
+        product_name_lower = product_name.lower()
+        
+        # Check each category's keywords
+        for category_code, rule in self.category_rules.items():
+            for keyword in rule['keywords']:
+                if keyword.lower() in product_name_lower:
+                    print(f"DEBUG: Product '{product_name}' matched keyword '{keyword}' -> Category {category_code} ({rule['description']})")
+                    return category_code
+        
+        print(f"DEBUG: Product '{product_name}' matched no keywords -> Default Category 29153")
+        return '29153'  # Default if no match found
+    
+    def get_category_info(self, category_code):
+        """Get category information by code"""
+        return self.category_rules.get(category_code, None)
+
 def copy_mapped_data(filter_stock=True):
     """
     Enhanced tool to copy mapped data from Faire products to Temu template.
@@ -191,155 +352,6 @@ def copy_mapped_data(filter_stock=True):
             'description': description
         }
         print(f"Added category: {category_name} with prefixes {prefixes}")
-    
-    class CategoryAssigner:
-        """Enhanced category assignment system"""
-        
-        def __init__(self):
-            self.category_rules = {
-                '29153': {
-                    'description': 'Unknown',
-                    'keywords': []
-                },
-                '54140':{'description':'Industrial & Scientific / Retail Store Fixtures & Equipment / Retail Displays & Racks / Countertop Display Cases',
-                         'keywords':['display']},
-                '2062': {
-                    'description': 'Pet Supplies / Small Animals / Carriers',
-                    'keywords': ['pet', 'carrier']
-                },
-                '29312': {
-                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Sunglasses & Eyewear',
-                    'keywords': ['sunglasses', 'eyewear', 'glasses', 'glass case']
-                },
-                '29163': {
-                    'description': 'Tote bags and totes',
-                    'keywords': ['tote']
-                },
-                '30988': {
-                    'description': 'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Cosmetic Cases',
-                    'keywords': ['cosmetic', 'makeup']
-                },
-                '29324': {
-                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Wallets',
-                    'keywords': ['wallet', 'purse', 'coin', 'card']
-                },
-                '29264': {
-                    'description': 'Clothing, Shoes & Jewelry / Women / Accessories / Belts',
-                    'keywords': ['belt']
-                },
-                '29164': {
-                    'description': 'Backpacks',
-                    'keywords': ['backpack', 'laptop']
-                },
-                '24380': {
-                    'description': 'Cell Phones & Accessories / Cases, Holsters & Sleeves',
-                    'keywords': ['phone', 'mobile']
-                },
-                '29542': {
-                    'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Necklaces',
-                    'keywords': ['necklace', 'pendant','rosary']
-                },
-                '36256': {
-                    'description': 'Sports & Outdoors / Sports / Leisure Sports / Pickleball / Paddles',
-                    'keywords': ['paddle']
-                },
-                '19843': {
-                    'description': 'Beauty & Personal Care / Foot, Hand & Nail Care / Tools & Accessories',
-                    'keywords': ['nail','foot','tool']
-                },
-                '29522': {
-                    'description': 'Clothing, Shoes & Jewelry / Women / Jewelry / Brooches & Pins',
-                    'keywords': ['brooch', 'pin', 'jewelry', 'accessory']
-                },
-                '30977': {'description':'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Travel Duffels',
-                          'keywords':['duffel bag','travel bag']},
-                '13027': {'description':'Home & Kitchen / Seasonal Décor / Ornaments / Pendants, Drops & Finials',
-                          'keywords':['pendant','finial','ornament','decoration']},
-                '29284': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Keyrings & Keychains',
-                          'keywords': ['keyring','keychain']},
-                '40388': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Gloves & Mittens / Women Fashion Gloves',
-                          'keywords':['gloves','mittens']},
-                '31141':{'description':'Clothing, Shoes & Jewelry / Shoe, Jewelry & Watch Accessories / Jewelry Accessories / Jewelry Boxes & Organizers / Jewelry Boxes',
-                         'keywords':['jewelry box','jewelry organizer','jewelry case']},
-                '29318':{'description':'Clothing, Shoes & Jewelry / Women / Accessories / Wallets, Card Cases & Money Organizers / Card & ID Cases / Card Cases',
-                         'keywords':['card case','card holder','card organizer']},
-                '19689':{'description':'Beauty & Personal Care / Tools & Accessories / Mirrors / Compact & Travel Mirrors',
-                         'keywords':['mirror']},
-                '29512':{'description':'Clothing, Shoes & Jewelry / Women / Jewelry / Jewelry Sets',
-                         'keywords':['earrings','earring']},
-                '29514':{'description':'Clothing, Shoes & Jewelry / Women / Jewelry / Earrings / Drop & Dangle',
-                         'keywords':['drop','dangle']},
-                '12139':{'description':'Home & Kitchen / Home Décor Products / Home Décor Accents / Coasters',
-                         'keywords':['coaster','coasters','coater']},
-                '39157':{"description":"Clothing, Shoes & Jewelry / Women / Handbags & Wallets / Women's Waist Packs",
-                         'keywords':['waist pack','fanny pack']},
-                '19289':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Claws',
-                         'keywords':['claw']},
-                '19641':{'description':'Beauty & Personal Care / Tools & Accessories / Makeup Brushes & Tools / Brush Sets',
-                         'keywords':['brush']},
-
-                '10334':{'description':'Home & Kitchen / Kitchen & Dining / Storage & Organization / Thermoses / Insulated Beverage Containers / Tumblers',
-                         'keywords':['tumbler','water bottle']},
-                '30654':{'description':'Clothing, Shoes & Jewelry / Men / Accessories / Wallets, Card Cases & Money Organizers / Coin Purses & Pouches',
-                         'keywords':['coin purse','coin pouch']},
-                '36255':{'description':'Sports & Outdoors / Sports / Leisure Sports & Game Room / Outdoor Games & Activities / Pickleball / Balls',
-                         'keywords':['pickleball ball']},
-                '19285':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Elastics & Ties',
-                         'keywords':['elastic','tie']},
-                '19284':{'description':'Beauty & Personal Care / Hair Care / Hair Accessories / Headbands',
-                         'keywords':['headband']},
-                '29270':{'description':'Clothing, Shoes & Jewelry / Women / Accessories / Hats & Caps / Baseball Caps',
-                         'keywords':['baseball cap']},
-                '12703':{'description':'Home & Kitchen / Storage & Organization / Kitchen Storage & Organization / Thermoses / Insulated Beverage Containers / Cups & Mugs',
-                         'keywords':['mug','cup']},
-                '2128':{'description':'Appliances / Small Kitchen Appliances / Blenders / Personal Size Blenders',
-                        'keywords':['blender']},
-                '39969':{'description':'Arts, Crafts & Sewing / Organization, Storage & Transport / Pen, Pencil & Marker Cases',
-                         'keywords':['pen case','pencil case','marker case','pen holder','pencil holder','marker holder']},
-                '10354':{'description':'Home & Kitchen / Kitchen & Dining / Storage & Organization / Food Storage / Food Containers / Containers',
-                         'keywords':['food container','food storage','lunch box','lunchbox','food holder','food organizer']},
-                '25491':{'description':'Toys & Games / Novelty & Gag Toys / Money Banks',
-                         'keywords':['money bank','piggy bank','tin box','tin container']},
-                '31007':{'description':'Clothing, Shoes & Jewelry / Luggage & Travel Gear / Travel Accessories / Luggage Straps',
-                         'keywords':['luggage strap','bag strap']},
-                '39460':{'description':'Arts, Crafts & Sewing / Scrapbooking & Stamping / Pens & Markers / Pens',
-                         'keywords':['pen','pens','pencils','pencil','marker','markers']},
-                '28969':{'description':'Clothing, Shoes & Jewelry / Women / Clothing / Coats, Jackets & Vests / Fur & Faux Fur / Faux Fur',
-                         'keywords':['faux fur jacket','fur coat','fur vest','fur coat','fur vest','fur jacket','fur vests','fur coats','fur jackets']},
-                '30253':{'description':'Clothing, Shoes & Jewelry / Novelty & More / Clothing / Novelty / Men / Accessories / Scarves',
-                         'keywords':['scarf','scarves','shawl']},
-                '27038':{'description':'Clothing, Shoes & Jewelry / Traditional & Cultural Wear / Latin American / Serapes & Ponchos',
-                         'keywords':['serape','poncho']},
-                '3833':{'description':'Electronics / Computers & Accessories / Computer Accessories & Peripherals / USB Gadgets / USB Fans',
-                        'keywords':['usb fan','hand fan','fan']},
-                '29280': {'description':'Clothing, Shoes & Jewelry / Women / Accessories / Hats & Caps / Sun Hats',
-                          'keywords':['hat']},
-                '11809':{'description':'Home & Kitchen / Bath / Towels / Beach Towels',
-                         'keywords':['towel']},
-                
-                
-                
-                
-            }
-        
-        def determine_category(self, product_name, image_data=None):
-            """Determine the best category based on product name and image data"""
-            if not product_name:
-                return '29153'  # Default category
-            
-            product_name_lower = product_name.lower()
-            
-            # Check each category's keywords
-            for category_code, rule in self.category_rules.items():
-                for keyword in rule['keywords']:
-                    if keyword.lower() in product_name_lower:
-                        return category_code
-            
-            return '29153'  # Default if no match found
-        
-        def get_category_info(self, category_code):
-            """Get category information by code"""
-            return self.category_rules.get(category_code, None)
     
     # ============================================================================
     # UTILITY FUNCTIONS
