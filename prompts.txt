@@ -1,0 +1,59 @@
+Baseline tool:
+
+I want to create a script
+
+Open a copy of the file in the data folder called 'temu_template.xlsx'
+
+Open the file in the data folder called 'faire_products.xlsx' and then on the sheet 'Products' look at the column values on row 1, and find the column called 'Product Name (English)'
+
+In the copy of 'temu_template.xlsx', on the sheet 'Template' look at row 2 to find the column with the value 'Product Name'
+
+Copy the data in every non-empty cell in the 'faire_products.xlsx' file in the 'Products' column from row 4 onwards (Ignore row 1-3), and move it to the column where 'Product Name' resides in the 'Template' sheet in 'temu_template.xlsx' 
+
+Save this copy of 'temu_template.xlsx' in the output folder as 'temu_upload_generated.xlsx'
+
+--------------
+
+Please assign the following fixed values for these columns in temu_template.xlsx as well with the data presented in the following format:
+
+temu_template Column Name = Column Value
+---
+'Update or Add' = 'Add'
+'Shipping Template' = 'NIMA2'
+'Size' = 'One Size'
+
+----
+
+Image logic
+
+In the temu_template file, there is a column called 'SKU Images URL', there are multiple columns with this name, so only fill the first one which is on column CS in the 'Template' sheet right now.
+
+Get the value from faire_products.xlsx, if there is a record for 'Option Image', then use that value, but if the field is empty, and there is a value for 'Product Images' then use that value instead, but it requires additional logic:
+
+If we are using 'Product Images' column from faire_products.xlsx, then the cell can contain multiple URLs which are separated by a whitespace or newline. In this case, split the URLs apart then assign the first URL to the first 'SKU Images URL' column, and then assign the next URL to the next 'SKU Images URL' column and so on. 
+
+Also assign a copy of the first 'SKU Images URL' column to the first column called 'Detail Images URL' in the temu_template file as well. 
+
+---------------
+
+Please add the following mapping rules between 'faire_products.xlsx' to 'temu_template.xlsx' if they're not already there and I will present it in the following format:
+
+faire_products column name = temu_template column name
+---
+'Option 1 Name' = 'Variation Theme'
+'Option 1 Value' = 'Color'
+'USD Unit Retail Price' = 'Base Price - USD'
+'USD Unit Retail Price' = 'List Price - USD'
+'Item Weight' = 'Weight - lb'
+'Item Length' = 'Length - in'
+'Item Width' = 'Width - in'
+'Item Height' = 'Height - in'
+
+
+----------
+
+Enhanced file creation? 
+
+I want you to go through the SKUs to find all of the unique prefix and create a separate copy of temu_template.xlsx which populates for each type of prefix, so retain all of the same logic but now create a new file for each unique prefix so if there is an item called HBG100BL, I want that to go into a file called temu_template_HBG.xlsx and every other item which has the starting letters 'HBG' from faire_products.xlsx
+
+
