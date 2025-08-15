@@ -201,6 +201,67 @@ def copy_mapped_data(filter_stock=True):
     """
     
     # ============================================================================
+    # DEFAULT VALUES FOR MISSING DATA
+    # ============================================================================
+    # Default values to use when Faire data is missing for specific columns
+    
+    DEFAULT_VALUES = {
+        'Weight - lb': 0.88,
+        'Length - in': 3.15,
+        'Width - in': 3.15,
+        'Height - in': 3.15
+    }
+    
+    # ============================================================================
+    # MISSING VALUES REPORTING SYSTEM
+    # ============================================================================
+    # Track all missing values that get backfilled with defaults
+    
+    missing_values_log = []
+    
+    def log_missing_value(sku, temu_column, default_value):
+        """Log a missing value that was backfilled with a default"""
+        missing_values_log.append({
+            'SKU': sku,
+            'MissingValue': temu_column,
+            'DefaultApplied': default_value
+        })
+    
+    def save_missing_values_report():
+        """Save the missing values report to CSV file"""
+        if missing_values_log:
+            import csv
+            report_file = 'output/missing_product_values.csv'
+            
+            # Ensure output directory exists
+            import os
+            os.makedirs('output', exist_ok=True)
+            
+            # Write CSV report
+            with open(report_file, 'w', newline='', encoding='utf-8') as csvfile:
+                fieldnames = ['SKU', 'MissingValue', 'DefaultApplied']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                
+                writer.writeheader()
+                for record in missing_values_log:
+                    writer.writerow(record)
+            
+            print(f"\n📊 Missing Values Report saved to: {report_file}")
+            print(f"   Total missing values logged: {len(missing_values_log)}")
+            
+            # Show summary by column
+            missing_by_column = {}
+            for record in missing_values_log:
+                col = record['MissingValue']
+                missing_by_column[col] = missing_by_column.get(col, 0) + 1
+            
+            print("   Missing values by column:")
+            for col, count in missing_by_column.items():
+                print(f"     {col}: {count} products")
+        else:
+            print("\n✅ No missing values detected - all products had complete data")
+    
+    # ============================================================================
     # COLUMN MAPPING DICTIONARY
     # ============================================================================
     # Configure your column mappings here:
@@ -305,27 +366,28 @@ def copy_mapped_data(filter_stock=True):
         return sku_str
     
     def split_image_urls(image_urls_str):
-        """Split image URLs and return the first one"""
+        """Split image URLs and return a list of all URLs"""
         if pd.isna(image_urls_str) or image_urls_str == '':
-            return ''
+            return []
         
         # Convert to string and split by common delimiters
         urls_str = str(image_urls_str)
         
-        # Split by common delimiters (comma, semicolon, pipe, newline)
-        delimiters = [',', ';', '|', '\n', '\r\n']
+        # Split by common delimiters (comma, semicolon, pipe, newline, space)
+        delimiters = [',', ';', '|', '\n', '\r\n', ' ']
         for delimiter in delimiters:
             if delimiter in urls_str:
                 urls = urls_str.split(delimiter)
-                # Return the first non-empty URL
+                # Return all non-empty URLs
+                clean_urls = []
                 for url in urls:
                     url_clean = url.strip()
                     if url_clean and url_clean != '':
-                        return url_clean
-                return ''
+                        clean_urls.append(url_clean)
+                return clean_urls
         
-        # If no delimiters found, return the whole string
-        return urls_str.strip()
+        # If no delimiters found, return the whole string as a single URL
+        return [urls_str.strip()]
     
     # ============================================================================
     # TRANSFORMATIONS DICTIONARY
@@ -457,16 +519,42 @@ def copy_mapped_data(filter_stock=True):
                         continue  # Skip the default single-column write below
                     
                     # Write data to template (default: single column)
+                    default_values_applied = 0
                     for row_idx, value in enumerate(source_data, 5):
-                        # Handle NaN values
-                        if pd.isna(value):
-                            template_sheet.cell(row=row_idx, column=temu_col_idx, value='')
+                        # Handle NaN values and apply defaults if needed
+                        if pd.isna(value) or value == '':
+                            # Check if this column has a default value defined
+                            if temu_col in DEFAULT_VALUES:
+                                cell_value = DEFAULT_VALUES[temu_col]
+                                default_values_applied += 1
+                                
+                                # Get the SKU for this row to log the missing value
+                                sku_value = ''
+                                if 'SKU' in category_df.columns:
+                                    sku_value = str(category_df.iloc[row_idx - 5]['SKU']) if pd.notna(category_df.iloc[row_idx - 5]['SKU']) else 'Unknown'
+                                
+                                log_missing_value(sku_value, temu_col, cell_value)
+                            else:
+                                cell_value = ''
                         else:
-                            template_sheet.cell(row=row_idx, column=temu_col_idx, value=value)
+                            cell_value = value
+                        
+                        template_sheet.cell(row=row_idx, column=temu_col_idx, value=cell_value)
                     
-                    print(f"      Copied {len(source_data)} values")
+                    # Report on default value usage
+                    if default_values_applied > 0:
+                        print(f"      Copied {len(source_data)} values ({default_values_applied} default values applied)")
+                        print(f"      Default values applied for {temu_col} - check missing_product_values.csv for details")
+                    else:
+                        print(f"      Copied {len(source_data)} values")
                 else:
                     print(f"    Skipping: {faire_col} -> {temu_col} (column not found)")
+            
+            # Log default value usage summary
+            print("    Default value usage summary:")
+            for temu_col, default_val in DEFAULT_VALUES.items():
+                if temu_col in [COLUMN_MAPPINGS.get(faire_col) for faire_col in COLUMN_MAPPINGS]:
+                    print(f"      {temu_col}: Default '{default_val}' (applied when source data missing)")
             
             # Conditional logic for Variation Theme and Color assignment
             print("    Processing conditional Variation Theme logic...")
@@ -588,13 +676,20 @@ def copy_mapped_data(filter_stock=True):
             if image_columns:
                 print(f"      Found {len(image_columns)} image columns")
                 
-                # Find Detail Images URL columns in template
+                # Find SKU Images URL columns in template (column CS and beyond)
+                sku_images_col_indices = []
+                for col_idx, cell in enumerate(template_sheet[2], 1):
+                    if 'SKU Images URL' in str(cell.value):
+                        sku_images_col_indices.append(col_idx)
+                
+                # Find Detail Images URL columns in template (column U and beyond)
                 detail_images_col_indices = []
                 for col_idx, cell in enumerate(template_sheet[2], 1):
                     if 'Detail Images URL' in str(cell.value):
                         detail_images_col_indices.append(col_idx)
                 
-                if detail_images_col_indices:
+                if sku_images_col_indices or detail_images_col_indices:
+                    print(f"      Found {len(sku_images_col_indices)} SKU Images URL columns")
                     print(f"      Found {len(detail_images_col_indices)} Detail Images URL columns")
                     
                     option_image_count = 0
@@ -606,11 +701,13 @@ def copy_mapped_data(filter_stock=True):
                         
                         # Try to find image data
                         image_urls = None
+                        image_source = None
                         
                         # First, try Option Image columns
                         for col in image_columns:
                             if 'Option' in col and pd.notna(row_data[col]) and str(row_data[col]).strip() != '':
                                 image_urls = row_data[col]
+                                image_source = 'Option Image'
                                 option_image_count += 1
                                 break
                         
@@ -619,6 +716,7 @@ def copy_mapped_data(filter_stock=True):
                             for col in image_columns:
                                 if 'Product' in col and pd.notna(row_data[col]) and str(row_data[col]).strip() != '':
                                     image_urls = row_data[col]
+                                    image_source = 'Product Images'
                                     product_image_count += 1
                                     break
                         
@@ -626,16 +724,35 @@ def copy_mapped_data(filter_stock=True):
                             no_image_count += 1
                             continue
                         
-                        # Process image URLs
+                        # Process image URLs - split into list
                         processed_urls = split_image_urls(image_urls)
+                        print(f"        Row {row_idx}: {image_source} -> {len(processed_urls)} URLs")
                         
-                        # Write to all Detail Images URL columns
-                        for col_idx in detail_images_col_indices:
-                            template_sheet.cell(row=row_idx, column=col_idx, value=processed_urls)
+                        # Distribute URLs sequentially across SKU Images URL columns
+                        if sku_images_col_indices and processed_urls:
+                            for i, col_idx in enumerate(sku_images_col_indices):
+                                if i < len(processed_urls):
+                                    template_sheet.cell(row=row_idx, column=col_idx, value=processed_urls[i])
+                                    print(f"          SKU Image {i+1}: {processed_urls[i][:50]}... -> Column {col_idx}")
+                                else:
+                                    # Leave remaining columns blank
+                                    template_sheet.cell(row=row_idx, column=col_idx, value='')
+                        
+                        # Distribute URLs sequentially across Detail Images URL columns
+                        if detail_images_col_indices and processed_urls:
+                            for i, col_idx in enumerate(detail_images_col_indices):
+                                if i < len(processed_urls):
+                                    template_sheet.cell(row=row_idx, column=col_idx, value=processed_urls[i])
+                                    print(f"          Detail Image {i+1}: {processed_urls[i][:50]}... -> Column {col_idx}")
+                                else:
+                                    # Leave remaining columns blank
+                                    template_sheet.cell(row=row_idx, column=col_idx, value='')
                     
                     print(f"        - Used Option Image: {option_image_count} rows")
                     print(f"        - Used Product Images: {product_image_count} rows")
                     print(f"        - No image data: {no_image_count} rows")
+                else:
+                    print("      Warning: No SKU Images URL or Detail Images URL columns found in template")
             else:
                 print("      Warning: No image columns found in Faire file")
             
@@ -707,6 +824,12 @@ def copy_mapped_data(filter_stock=True):
             print(f"      Completed chunk {chunk_idx}/{len(data_chunks)}: {chunk_filename}")
         
         print(f"Completed processing {category_name} category ({len(product_data)} products) -> {len(data_chunks)} files")
+        
+        # Summary of default value usage for this category
+        print(f"\nDefault value summary for {category_name} category:")
+        for temu_col, default_val in DEFAULT_VALUES.items():
+            if temu_col in [COLUMN_MAPPINGS.get(faire_col) for faire_col in COLUMN_MAPPINGS]:
+                print(f"  {temu_col}: Default '{default_val}' available for missing data")
     
     # ============================================================================
     # MAIN PROCESSING FUNCTION
@@ -747,6 +870,7 @@ def copy_mapped_data(filter_stock=True):
         print(f"Setting {len(FIXED_COLUMN_VALUES)} fixed values")
         print(f"Categories: {list(CATEGORY_CONFIGS.keys())}")
         print("Chunking: All files will be split into chunks of 1000 records")
+        print("📊 Missing Values Reporting: ENABLED - will track all default values applied")
         
         # Initialize category assigner
         category_assigner = CategoryAssigner()
@@ -892,6 +1016,12 @@ def copy_mapped_data(filter_stock=True):
         except Exception as e:
             print(f"❌ Error during price/stock update processing: {e}")
             print("Continuing with main process...")
+        
+        # Save the missing values report after all processing
+        print("\n" + "="*60)
+        print("GENERATING MISSING VALUES REPORT")
+        print("="*60)
+        save_missing_values_report()
         
         return  # Exit early since we're now using separate function
         
