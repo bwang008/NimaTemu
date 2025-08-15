@@ -22,6 +22,7 @@ class CategoryAssigner:
     
     def __init__(self):
         self.category_rules = {
+            
             '27038':{'description':'Clothing, Shoes & Jewelry / Traditional & Cultural Wear / Latin American / Serapes & Ponchos',
                      'keywords':['serape','poncho']},
             '39460':{'description':'Arts, Crafts & Sewing / Scrapbooking & Stamping / Pens & Markers / Pens',
